@@ -2,7 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import pinoHttp from 'pino-http';
+import pinoHttpModule from 'pino-http';
+const pinoHttp = pinoHttpModule.default ?? pinoHttpModule;
 import { logger } from './common/logger.js';
 import { errorHandler } from './common/error-handler.js';
 
@@ -19,7 +20,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Health check
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok 6' });
+  res.json({ status: 'ok' });
 });
 
 // TODO: Mount API routes here in Phase 2
