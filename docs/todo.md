@@ -46,11 +46,12 @@
 
 ## Phase 4: Testing + CI
 
-- [ ] Unit tests: subscription.service (new sub, duplicate, re-subscribe, invalid input, repo not found)
-- [ ] Unit tests: scanner.service (new release, multiple releases, no new, GitHub failure)
-- [ ] Unit tests: notifier.service (send success, SMTP failure, retry)
-- [ ] Unit tests: github.client (success, 404, 429 retry, cache hit/miss)
-- [ ] GitHub Actions CI: lint + unit tests on push/PR
+- [x] Unit tests: subscription.service (new sub, duplicate, re-subscribe, invalid input, repo not found)
+- [ ] Unit tests: scanner.service (new release, multiple releases, no new, GitHub failure) — blocked by Phase 3
+- [x] Unit tests: notifier.service (send success, SMTP failure) — retry tests after Phase 3
+- [x] Unit tests: notifier.templates (confirmation email, release notification email)
+- [x] Unit tests: github.client (success, 404, 429 retry, auth header, rate limit)
+- [x] GitHub Actions CI: lint + unit tests on push/PR
 
 ## Phase 5: Extras
 
