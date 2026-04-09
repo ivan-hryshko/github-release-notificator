@@ -6,6 +6,9 @@ import pinoHttpModule from 'pino-http';
 const pinoHttp = pinoHttpModule.default ?? pinoHttpModule;
 import { logger } from './common/logger.js';
 import { errorHandler } from './common/error-handler.js';
+import { subscriptionRouter } from './subscription/subscription.router.js';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -23,8 +26,13 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// TODO: Mount API routes here in Phase 2
-// app.use('/api', apiRouter);
+// API routes
+app.use('/api', subscriptionRouter);
+
+// Swagger UI — override host to point to this server
+const swaggerDoc = YAML.load(path.join(__dirname, '..', 'docs', 'api.yaml'));
+swaggerDoc.host = `localhost:${process.env.PORT || 3000}`;
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
 // Error handler (must be last)
 app.use(errorHandler);

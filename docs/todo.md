@@ -22,18 +22,16 @@
 
 ## Phase 2: Core API
 
-- [ ] Token utility (crypto.randomUUID)
-- [ ] GitHub client (basic, no cache): validate repo existence, fetch releases
-- [ ] GitHub client: rate limit handling (track X-RateLimit-Remaining/Reset, handle 429)
-- [ ] Subscription validator (Zod: email format, repo regex)
-- [ ] Subscription repository (DB queries via Drizzle)
-- [ ] Subscription service (business logic: subscribe, confirm, unsubscribe, list)
-  - Handle: new sub, duplicate (409), re-subscribe after unsubscribe, pending resend
-- [ ] Subscription router (POST /subscribe, GET /confirm/:token, /unsubscribe/:token, /subscriptions)
-- [ ] Notifier service: basic email sending via Nodemailer + Mailtrap
-- [ ] Email templates: confirmation email
-- [ ] Prepare Swagger (api.yaml) for testing — serve via endpoint or static file
-- [ ] Manual testing: all 4 endpoints with curl/Postman
+- [x] Token utility (crypto.randomUUID) — done in Phase 1
+- [x] GitHub client: validate repo existence, fetch releases, rate limit handling (429, X-RateLimit headers)
+- [x] Subscription validator (Zod: email format, repo regex, token UUID)
+- [x] Subscription repository (Drizzle: upsert user/repo, find/create/update subscriptions, join queries)
+- [x] Subscription service (subscribe, confirm, unsubscribe, list + re-subscribe after unsub, pending resend)
+- [x] Subscription router (POST /subscribe, GET /confirm/:token, /unsubscribe/:token, /subscriptions)
+- [x] Notifier service: email sending via Nodemailer (graceful skip if SMTP not configured)
+- [x] Email templates: confirmation + release notification
+- [x] Swagger served at GET /api/swagger.yaml
+- [x] Manual testing: all endpoints verified (400, 404, 409, 200, re-subscribe, unsubscribe)
 
 ## Phase 3: Scanner + Notifications
 
