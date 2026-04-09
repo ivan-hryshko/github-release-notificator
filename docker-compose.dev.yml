@@ -1,0 +1,26 @@
+services:
+  postgres:
+    container_name: grn-postgres-dev
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: releases
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d releases"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    container_name: grn-redis-dev
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata_dev:

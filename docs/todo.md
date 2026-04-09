@@ -2,26 +2,23 @@
 
 ## Phase 1: Project Setup
 
-- [ ] Init project: package.json, tsconfig.json
-- [ ] ESLint config with code quality rules:
-  - max-lines: 300 (warn)
-  - max-lines-per-function: 50 (warn)
-  - max-depth: 4 (warn)
-  - complexity: 10 (warn)
-  - If a file/function hits these limits — refactor by extracting logic to a separate file
-- [ ] Pino logger setup
-- [ ] Config: env.ts with Zod validation
-- [ ] Database config: Drizzle + pg pool
-- [ ] DB schema: users, repositories, subscriptions, scan_jobs, notifications
-- [ ] Drizzle-kit: generate migrations
-- [ ] Migration runner (runs on service startup)
-- [ ] Express app setup: middleware, error handler, async handler wrapper
-- [ ] Custom error classes (AppError, NotFoundError, ConflictError, ValidationError)
-- [ ] Dockerfile (multi-stage build)
-- [ ] docker-compose.yml (app + postgres + redis, ports 80:3000, hide DB/Redis ports)
-- [ ] docker-compose.dev.yml (postgres + redis with exposed ports for local dev)
-- [ ] .env.example
-- [ ] Verify: `docker-compose up` → server starts, migrations run
+- [x] Init project: package.json, tsconfig.json, .nvmrc (Node 20)
+- [x] ESLint config with code quality rules (max-lines 300, max-lines-per-function 50, max-depth 4, complexity 10)
+- [x] Pino logger setup
+- [x] Config: env.ts with Zod validation (optional SMTP/API_KEY/GITHUB_TOKEN for dev)
+- [x] Database config: Drizzle + pg pool
+- [x] DB schema: users, repositories, subscriptions, scan_jobs, notifications
+- [x] Drizzle-kit: generate migrations
+- [x] Migration runner (runs on service startup)
+- [x] Express app setup: middleware, error handler, async handler wrapper
+- [x] Custom error classes (AppError, NotFoundError, ConflictError, ValidationError)
+- [x] Dockerfile (multi-stage build)
+- [x] docker-compose.yml (grn-app, grn-postgres, grn-redis — ports 80:3000, DB/Redis hidden)
+- [x] docker-compose.dev.yml (grn-postgres-dev, grn-redis-dev — exposed ports for local dev)
+- [x] .env.example + .gitignore
+- [x] Redis client with graceful degradation
+- [x] Vitest config
+- [x] Verify: server starts, migrations run, health check works, lint passes
 
 ## Phase 2: Core API
 
@@ -62,16 +59,12 @@
 ### Priority extras (do first)
 - [ ] Redis caching layer: GitHub API responses with TTL 10 min
 - [ ] Redis: ETag/If-None-Match support for conditional requests
-- [ ] Redis: graceful degradation (skip cache if Redis down)
 - [ ] API key authentication: X-API-Key header middleware on /api/*
 - [ ] HTML subscription page: public/index.html served by Express
 - [ ] Deploy on DigitalOcean: Droplet + docker-compose + firewall (22, 80)
 
 ### Lower priority extras (if time permits)
 - [ ] Prometheus metrics: /metrics endpoint (prom-client)
-  - Counters: http_requests_total, subscriptions_created, emails_sent/failed, github_api_calls, scan_runs
-  - Gauges: active_subscriptions, tracked_repositories, github_rate_limit_remaining, pending_notifications
-  - Histograms: http_request_duration, scan_duration, email_send_duration
 - [ ] Integration tests (testcontainers: Postgres + Redis, full flow)
 - [ ] GitHub Actions CI: add integration tests
 - [ ] gRPC interface as alternative/addition to REST API

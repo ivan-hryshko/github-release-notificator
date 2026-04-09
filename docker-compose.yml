@@ -1,0 +1,37 @@
+services:
+  app:
+    container_name: grn-app
+    build: .
+    ports:
+      - "80:3000"
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+
+  postgres:
+    container_name: grn-postgres
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: releases
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secret}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d releases"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    container_name: grn-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+
+volumes:
+  pgdata:
