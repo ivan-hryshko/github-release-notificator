@@ -35,20 +35,21 @@
 
 ## Phase 3: Scanner + Notifications
 
-- [ ] Scanner service: fetch releases list, compare with last_seen_tag, detect all missed releases
-- [ ] Scanner cron (node-cron): scheduling + mutex to prevent overlap
-- [ ] Notification creation: scanner creates 'pending' notification records per subscriber per release
-- [ ] Notifier cron (every minute): process pending notifications, send emails, update status
-- [ ] Notifier retry: re-attempt failed notifications (max 3 attempts)
-- [ ] Email templates: release notification (with unsubscribe link)
-- [ ] Notification deduplication: prevent duplicate notification for same subscription + release_tag
+- [x] Scanner service: fetch releases list, compare with last_seen_tag, detect all missed releases
+- [x] Scanner cron (node-cron): scheduling + mutex to prevent overlap
+- [x] Notification creation: scanner creates 'pending' notification records per subscriber per release
+- [x] Notifier cron (every minute): process pending notifications, send emails, update status
+- [x] Notifier retry: re-attempt failed notifications (max 3 attempts)
+- [x] Email templates: release notification (with unsubscribe link) — done in Phase 2
+- [x] Notification deduplication: prevent duplicate notification for same subscription + release_tag
 - [ ] E2E manual test: subscribe → confirm → scan → notifications created → email sent
 
 ## Phase 4: Testing + CI
 
 - [x] Unit tests: subscription.service (new sub, duplicate, re-subscribe, invalid input, repo not found)
-- [ ] Unit tests: scanner.service (new release, multiple releases, no new, GitHub failure) — blocked by Phase 3
-- [x] Unit tests: notifier.service (send success, SMTP failure) — retry tests after Phase 3
+- [x] Unit tests: scanner.service (new release, multiple releases, no new, GitHub failure, dedup)
+- [x] Unit tests: notifier.service (send success, SMTP failure)
+- [x] Unit tests: notifier.cron (process pending, send success/failure, mixed batch, template rendering)
 - [x] Unit tests: notifier.templates (confirmation email, release notification email)
 - [x] Unit tests: github.client (success, 404, 429 retry, auth header, rate limit)
 - [x] GitHub Actions CI: lint + unit tests on push/PR

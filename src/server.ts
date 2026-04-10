@@ -4,9 +4,14 @@ import { runMigrations } from './db/migrate.js';
 import { logger } from './common/logger.js';
 import { pool } from './config/database.js';
 import { disconnectRedis } from './common/redis.js';
+import { startScannerCron } from './scanner/scanner.cron.js';
+import { startNotifierCron } from './notifier/notifier.cron.js';
 
 async function start(): Promise<void> {
   await runMigrations();
+
+  startScannerCron();
+  startNotifierCron();
 
   const server = app.listen(env.PORT, () => {
     logger.info(`Server running on port ${env.PORT}`);
