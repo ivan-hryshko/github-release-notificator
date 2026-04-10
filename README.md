@@ -77,3 +77,12 @@ src/
     - Postgress - good choise in most cases, for test task perfect
     - I want work with Claude so i choose Drizzle ORM
   - Think about draft solution and also genereta draft plan with claude for some corner cases maybe i lost sometning
+2. Start build basic setup
+  - test it and with Claude
+3. Add basic endpoints
+  - cover them with unit tests
+  - add git basic ci - it helps as at development
+4. Add Scaner and Notifier logic
+  - it more complex logic so i alos added integration tests
+  - switch Mailtrap to Mailhog that Claude also can locally check emails
+
