@@ -66,7 +66,7 @@ src/
 └── public/          # Static HTML subscription page
 ```
 
-## Logic steps
+## Develop logic steps
 1. Requirment analysis
   - Planing do tasks in pair with Claude
   - Thinking about deployment method
@@ -85,4 +85,7 @@ src/
 4. Add Scaner and Notifier logic
   - it more complex logic so i alos added integration tests
   - switch Mailtrap to Mailhog that Claude also can locally check emails
+5. Refined email UI for better user experience
+6. Implemented a basic UI for API integration. Acknowledging the time constraints for a polished UX, I’ve decided to prioritize deployment first
+  - Done is better than perfect: a deployed site beats an undeployed ideal
 
