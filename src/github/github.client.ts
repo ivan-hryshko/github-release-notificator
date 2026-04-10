@@ -115,7 +115,7 @@ export async function fetchReleases(
     return [];
   }
 
-  const releases: GitHubRelease[] = await response.json();
+  const releases = (await response.json()) as GitHubRelease[];
   return releases.filter((r) => !r.draft && !r.prerelease);
 }
 

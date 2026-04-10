@@ -1,4 +1,4 @@
-import Redis from 'ioredis';
+import { Redis } from 'ioredis';
 import { logger } from './logger.js';
 
 let redis: Redis | null = null;
@@ -11,7 +11,7 @@ export function getRedis(): Redis | null {
       lazyConnect: true,
     });
 
-    redis.on('error', (err) => {
+    redis.on('error', (err: Error) => {
       logger.warn({ err }, 'Redis connection error — cache disabled');
     });
 
