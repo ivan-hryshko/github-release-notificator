@@ -57,10 +57,10 @@
 ## Phase 5: Extras
 
 ### Priority extras (do first)
-- [ ] Redis caching layer: GitHub API responses with TTL 10 min
-- [ ] Redis: ETag/If-None-Match support for conditional requests
+- [x] Redis caching layer: GitHub API responses with configurable TTL (GITHUB_CACHE_TTL, default 600s)
+- [x] Redis: ETag/If-None-Match support for conditional requests (304 returns cached body)
 - [ ] API key authentication: X-API-Key header middleware on /api/*
-- [ ] HTML subscription page: public/index.html served by Express
+- [x] HTML subscription page: public/index.html served by Express
 - [ ] Deploy on DigitalOcean: Droplet + docker-compose + firewall (22, 80)
 
 ### Lower priority extras (if time permits)

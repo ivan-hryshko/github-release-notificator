@@ -10,6 +10,10 @@ vi.mock('../config/env.js', () => ({ env: mockEnv }));
 vi.mock('../common/logger.js', () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
+vi.mock('./github.cache.js', () => ({
+  getCached: vi.fn().mockResolvedValue(null),
+  setCache: vi.fn().mockResolvedValue(undefined),
+}));
 
 import { logger } from '../common/logger.js';
 
@@ -18,10 +22,12 @@ function mockResponse(
   body?: unknown,
   headers?: Record<string, string>,
 ): Response {
+  const bodyStr = JSON.stringify(body ?? {});
   return {
     status,
     ok: status >= 200 && status < 300,
     json: vi.fn().mockResolvedValue(body ?? {}),
+    text: vi.fn().mockResolvedValue(bodyStr),
     headers: new Headers({
       'x-ratelimit-remaining': '4999',
       'x-ratelimit-reset': '9999999999',

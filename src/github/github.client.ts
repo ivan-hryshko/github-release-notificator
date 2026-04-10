@@ -1,5 +1,6 @@
 import { logger } from '../common/logger.js';
 import { env } from '../config/env.js';
+import { getCached, setCache } from './github.cache.js';
 
 const GITHUB_API_BASE = 'https://api.github.com';
 
@@ -51,11 +52,16 @@ async function waitForRateLimit(): Promise<void> {
 }
 
 async function githubFetch(path: string): Promise<Response> {
+  const cached = await getCached(path);
+
   await waitForRateLimit();
 
-  const response = await fetch(`${GITHUB_API_BASE}${path}`, {
-    headers: getHeaders(),
-  });
+  const headers = getHeaders();
+  if (cached?.etag) {
+    headers['If-None-Match'] = cached.etag;
+  }
+
+  const response = await fetch(`${GITHUB_API_BASE}${path}`, { headers });
 
   updateRateLimit(response);
 
@@ -65,6 +71,25 @@ async function githubFetch(path: string): Promise<Response> {
     logger.warn({ waitMs }, 'GitHub 429 rate limited, retrying');
     await new Promise((resolve) => setTimeout(resolve, waitMs));
     return githubFetch(path);
+  }
+
+  // 304 Not Modified — return cached body as a synthetic Response
+  if (response.status === 304 && cached) {
+    return new Response(cached.body, {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  // Cache successful responses
+  if (response.ok) {
+    const body = await response.text();
+    const etag = response.headers.get('etag');
+    await setCache(path, body, etag);
+    return new Response(body, {
+      status: response.status,
+      headers: response.headers,
+    });
   }
 
   return response;

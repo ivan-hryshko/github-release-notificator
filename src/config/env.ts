@@ -22,6 +22,8 @@ const envSchema = z.object({
   SCAN_INTERVAL: z.string().default('*/5 * * * *'),
   NOTIFY_INTERVAL: z.string().default('*/1 * * * *'),
   NOTIFY_MAX_ATTEMPTS: z.coerce.number().default(3),
+
+  GITHUB_CACHE_TTL: z.coerce.number().default(600),
 });
 
 export type Env = z.infer<typeof envSchema>;
