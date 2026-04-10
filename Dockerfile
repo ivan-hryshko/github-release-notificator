@@ -12,5 +12,6 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 COPY src/public/ ./dist/public/
+COPY src/swagger/ ./dist/swagger/
 EXPOSE 3000
 CMD ["node", "dist/server.js"]

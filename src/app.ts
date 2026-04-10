@@ -30,7 +30,7 @@ app.get('/health', (_req, res) => {
 app.use('/api', subscriptionRouter);
 
 // Swagger UI — override host to point to this server
-const swaggerDoc = YAML.load(path.join(__dirname, '..', 'docs', 'api.yaml'));
+const swaggerDoc = YAML.load(path.join(__dirname, 'swagger', 'api.yaml'));
 swaggerDoc.host = `localhost:${process.env.PORT || 3000}`;
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
