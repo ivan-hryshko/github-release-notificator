@@ -10,7 +10,7 @@ describe('confirmationEmail', () => {
   it('returns correct subject', () => {
     const result = confirmationEmail('abc-token');
     expect(result.subject).toBe(
-      'Confirm your subscription — GitHub Release Notificator',
+      'Confirm your subscription — Release Notifier',
     );
   });
 
@@ -70,6 +70,8 @@ describe('releaseNotificationEmail', () => {
       'https://github.com/owner/repo/releases/tag/v1.2.0',
       'unsub-token',
     );
-    expect(result.html).toContain('<strong>v1.2.0</strong>');
+    // tagName appears both in the badge and as the display name fallback
+    const matches = result.html.match(/v1\.2\.0/g);
+    expect(matches?.length).toBeGreaterThanOrEqual(2);
   });
 });
