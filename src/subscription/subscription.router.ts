@@ -24,7 +24,7 @@ router.post(
     const template = confirmationEmail(result.subscription.confirmToken);
     await sendEmail(email, template.subject, template.html);
 
-    res.status(200).json({ message: 'Subscription successful. Confirmation email sent.' });
+    res.status(200).json({ message: 'Subscription successful. Please check your email (including spam folder) to confirm.' });
   }),
 );
 
