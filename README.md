@@ -11,7 +11,7 @@ API service that allows users to subscribe to email notifications about new rele
 - **Email:** Nodemailer + Mailtrap
 - **Scanner:** node-cron (in-process scheduled jobs)
 - **Testing:** Vitest
-- **CI:** GitHub Actions
+- **CI/CD:** GitHub Actions (tests + manual deploy)
 - **Deploy:** DigitalOcean Droplet + Docker
 
 ## Architecture
@@ -77,6 +77,7 @@ src/
 - [SDD: System Design Document](docs/sdd.md)
 - [ADR-001: Switch to MailHog for local dev](docs/adr/ADR-001-mailhog-for-local-development.md)
 - [ADR-002: Single Admin API Key](docs/adr/ADR-002-api-key-auth.md)
+- [ADR-003: Manual CD Pipeline](docs/adr/ADR-003-cd-pipeline.md)
 
 ## Develop logic steps
 1. Requirements analysis — [RFC-001](docs/rfc/RFC-001-requirements-and-stack.md)
@@ -92,4 +93,5 @@ src/
 6. Built HTML subscription page and Redis caching layer (GitHub API)
 7. Deploy to DigitalOcean — done is better than perfect
 8. Added API key authentication — [ADR-002](docs/adr/ADR-002-api-key-auth.md)
+9. Added manual CD pipeline for one-click deploys — [ADR-003](docs/adr/ADR-003-cd-pipeline.md)
 
