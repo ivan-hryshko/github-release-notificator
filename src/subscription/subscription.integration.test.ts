@@ -1,9 +1,4 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-
-// Set API_KEY before importing app (env is loaded at import time)
-const TEST_API_KEY = 'test-integration-key';
-process.env.API_KEY = TEST_API_KEY;
-
 import { app } from '../app.js';
 import { pool } from '../config/database.js';
 import { runMigrations } from '../db/migrate.js';
@@ -18,7 +13,7 @@ async function request(path: string, options?: RequestInit) {
 
 async function authedRequest(path: string, options?: RequestInit) {
   const headers = new Headers(options?.headers);
-  headers.set('X-API-Key', TEST_API_KEY);
+  headers.set('X-API-Key', process.env.API_KEY ?? '');
   return fetch(`http://localhost:${PORT}${path}`, { ...options, headers });
 }
 
