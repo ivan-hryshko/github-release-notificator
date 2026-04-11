@@ -1,4 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
+
+// Set API_KEY before importing app (env is loaded at import time)
+const TEST_API_KEY = 'test-integration-key';
+process.env.API_KEY = TEST_API_KEY;
+
 import { app } from '../app.js';
 import { pool } from '../config/database.js';
 import { runMigrations } from '../db/migrate.js';
@@ -11,8 +16,14 @@ async function request(path: string, options?: RequestInit) {
   return fetch(`http://localhost:${PORT}${path}`, options);
 }
 
+async function authedRequest(path: string, options?: RequestInit) {
+  const headers = new Headers(options?.headers);
+  headers.set('X-API-Key', TEST_API_KEY);
+  return fetch(`http://localhost:${PORT}${path}`, { ...options, headers });
+}
+
 async function post(path: string, body: object) {
-  return request(path, {
+  return authedRequest(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -189,12 +200,12 @@ describe('Subscription API', () => {
 
   describe('GET /api/subscriptions', () => {
     it('returns 400 for invalid email', async () => {
-      const res = await request('/api/subscriptions?email=invalid');
+      const res = await authedRequest('/api/subscriptions?email=invalid');
       expect(res.status).toBe(400);
     });
 
     it('returns empty array for unknown email', async () => {
-      const res = await request(
+      const res = await authedRequest(
         '/api/subscriptions?email=nobody@example.com',
       );
       expect(res.status).toBe(200);
@@ -210,7 +221,7 @@ describe('Subscription API', () => {
       const token = await getToken('confirm_token');
       await request(`/api/confirm/${token}`);
 
-      const res = await request(
+      const res = await authedRequest(
         '/api/subscriptions?email=test@example.com',
       );
       expect(res.status).toBe(200);
@@ -234,7 +245,7 @@ describe('Subscription API', () => {
       const unsubToken = await getToken('unsubscribe_token');
       await request(`/api/unsubscribe/${unsubToken}`);
 
-      const res = await request(
+      const res = await authedRequest(
         '/api/subscriptions?email=test@example.com',
       );
       const body = await res.json();
@@ -271,11 +282,44 @@ describe('Subscription API', () => {
 
       // Confirm and verify active
       await request(`/api/confirm/${token2}`);
-      const subsRes = await request(
+      const subsRes = await authedRequest(
         '/api/subscriptions?email=test@example.com',
       );
       const body = await subsRes.json();
       expect(body).toHaveLength(1);
+    });
+  });
+
+  // ─── API Key Authentication ──────────────────────────
+
+  describe('API Key Authentication', () => {
+    it('returns 401 for POST /subscribe without key', async () => {
+      const res = await request('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'test@example.com', repo: 'golang/go' }),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it('returns 401 for GET /subscriptions without key', async () => {
+      const res = await request('/api/subscriptions?email=test@example.com');
+      expect(res.status).toBe(401);
+    });
+
+    it('allows GET /confirm/:token without key', async () => {
+      const res = await request(
+        '/api/confirm/00000000-0000-0000-0000-000000000000',
+      );
+      // 404 = no auth block, token just not found
+      expect(res.status).toBe(404);
+    });
+
+    it('allows GET /unsubscribe/:token without key', async () => {
+      const res = await request(
+        '/api/unsubscribe/00000000-0000-0000-0000-000000000000',
+      );
+      expect(res.status).toBe(404);
     });
   });
 });

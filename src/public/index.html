@@ -150,6 +150,15 @@
 </div>
 
 <div class="container">
+  <!-- API Key Card -->
+  <div class="card" style="padding:16px 28px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <label for="api-key" style="margin:0;white-space:nowrap">API Key</label>
+      <input type="password" id="api-key" placeholder="Leave empty if auth is disabled" style="flex:1;padding:8px 12px;border:1.5px solid #d4d4d8;border-radius:8px;font-size:14px;background:#fafafa;outline:none">
+      <div class="hint" style="margin:0;white-space:nowrap">Session only</div>
+    </div>
+  </div>
+
   <!-- Subscribe Card -->
   <div class="card">
     <h2>Subscribe to a repository</h2>
@@ -187,6 +196,16 @@
 <script>
   const API = '/api';
 
+  // API Key — session only, not persisted (XSS-safe)
+  const apiKeyInput = document.getElementById('api-key');
+
+  function getHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    const key = apiKeyInput.value.trim();
+    if (key) headers['X-API-Key'] = key;
+    return headers;
+  }
+
   function showToast(id, message, type) {
     const el = document.getElementById(id);
     el.textContent = message;
@@ -207,7 +226,7 @@
     try {
       const res = await fetch(API + '/subscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({ email, repo }),
       });
       const data = await res.json();
@@ -215,6 +234,8 @@
       if (res.ok) {
         showToast('subscribe-toast', data.message || 'Subscription successful! Check your email to confirm.', 'success');
         document.getElementById('sub-repo').value = '';
+      } else if (res.status === 401) {
+        showToast('subscribe-toast', 'Invalid API key. Check your API key above.', 'error');
       } else {
         showToast('subscribe-toast', data.message || 'Something went wrong', 'error');
       }
@@ -231,9 +252,16 @@
     e.preventDefault();
     const email = document.getElementById('lookup-email').value.trim();
     const list = document.getElementById('subs-list');
+    const headers = getHeaders();
+    delete headers['Content-Type'];
 
     try {
-      const res = await fetch(API + '/subscriptions?email=' + encodeURIComponent(email));
+      const res = await fetch(API + '/subscriptions?email=' + encodeURIComponent(email), { headers });
+      if (res.status === 401) {
+        showToast('lookup-toast', 'Invalid API key. Check your API key above.', 'error');
+        list.innerHTML = '';
+        return;
+      }
       if (!res.ok) {
         const data = await res.json();
         showToast('lookup-toast', data.message || 'Invalid email', 'error');

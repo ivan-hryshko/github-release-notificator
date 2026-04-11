@@ -195,6 +195,7 @@ Scanner isolates errors per-repo: if one repo fails, others continue scanning.
 
 ## 6. Security
 
+- **API key authentication** — `X-API-Key` header on `POST /subscribe` and `GET /subscriptions`. Single admin key from `API_KEY` env var. When not set, auth is disabled. Confirm/unsubscribe endpoints are unprotected (accessed via email links with UUID tokens). See [ADR-002](adr/ADR-002-api-key-auth.md).
 - **Double opt-in** — subscription activates only after clicking UUID confirmation link
 - **Stateless unsubscribe** — each subscription has a unique `unsubscribe_token` in every email
 - **Token entropy** — `crypto.randomUUID()` = 122 bits, brute force not feasible

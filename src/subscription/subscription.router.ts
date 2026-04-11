@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { asyncHandler } from '../common/async-handler.js';
+import { apiKeyAuth } from '../common/auth.middleware.js';
 import { ValidationError } from '../common/errors.js';
 import { subscribeSchema, emailQuerySchema, tokenParamSchema } from './subscription.validator.js';
 import * as service from './subscription.service.js';
@@ -10,6 +11,7 @@ const router = Router();
 
 router.post(
   '/subscribe',
+  apiKeyAuth,
   asyncHandler(async (req, res) => {
     const parsed = subscribeSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -54,6 +56,7 @@ router.get(
 
 router.get(
   '/subscriptions',
+  apiKeyAuth,
   asyncHandler(async (req, res) => {
     const parsed = emailQuerySchema.safeParse(req.query);
     if (!parsed.success) {
