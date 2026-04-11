@@ -21,6 +21,17 @@ Monolith with three modules in a single Node.js process:
 - **Scanner** — cron job that checks GitHub for new releases
 - **Notifier** — cron job that processes pending email notifications
 
+## Live Demo
+
+| | URL |
+|--|-----|
+| Web UI | http://64.226.66.97/ |
+| Swagger UI | http://64.226.66.97/api/docs |
+| Health check | http://64.226.66.97/health |
+
+> **For reviewers (test task only):** API Key: `JgayfiJ4203M3vVytlvt0mQAkz313KCA`
+> This key is provided here solely for the test task evaluation. In a production system, API keys would be generated per-user and never committed to the repository.
+
 ## Quick Start
 
 ```bash
@@ -52,9 +63,6 @@ docker-compose up --build
 | GET | /api/subscriptions?email= | API Key | List active subscriptions for email |
 
 **Authentication:** Protected endpoints require `X-API-Key` header. When `API_KEY` is not set in `.env`, auth is disabled. See [ADR-002](docs/adr/ADR-002-api-key-auth.md).
-
-> **For reviewers (test task only):** API Key: `JgayfiJ4203M3vVytlvt0mQAkz313KCA`
-> This key is provided here solely for the test task evaluation. In a production system, API keys would be generated per-user and never committed to the repository.
 
 ## Project Structure
 

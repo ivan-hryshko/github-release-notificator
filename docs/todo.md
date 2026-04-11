@@ -75,4 +75,5 @@
 
 - [ ] README.md: architecture description, design decisions, setup instructions
 - [ ] Final review: check all Swagger contract compliance
+  - [ ] Fix pass API key
 - [ ] Final deploy + production testing
