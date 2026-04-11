@@ -51,7 +51,10 @@ docker-compose up --build
 | GET | /api/unsubscribe/:token | - | Unsubscribe from notifications |
 | GET | /api/subscriptions?email= | API Key | List active subscriptions for email |
 
-**Authentication:** Set `API_KEY` in `.env` to enable. Pass via `X-API-Key` header. When `API_KEY` is empty, auth is disabled. See [ADR-002](docs/adr/ADR-002-api-key-auth.md).
+**Authentication:** Protected endpoints require `X-API-Key` header. When `API_KEY` is not set in `.env`, auth is disabled. See [ADR-002](docs/adr/ADR-002-api-key-auth.md).
+
+> **For reviewers (test task only):** API Key: `JgayfiJ4203M3vVytlvt0mQAkz313KCA`
+> This key is provided here solely for the test task evaluation. In a production system, API keys would be generated per-user and never committed to the repository.
 
 ## Project Structure
 
