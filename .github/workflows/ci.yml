@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   lint-and-test:
@@ -51,7 +52,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [lint-and-test, integration]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
