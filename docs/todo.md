@@ -61,7 +61,9 @@
 - [x] Redis: ETag/If-None-Match support for conditional requests (304 returns cached body)
 - [ ] API key authentication: X-API-Key header middleware on /api/*
 - [x] HTML subscription page: public/index.html served by Express
-- [ ] Deploy on DigitalOcean: Droplet + docker-compose + firewall (22, 80)
+  - [ ] possibility unsubscribe from ui
+  - [ ] possibility pass full github repo
+- [x] Deploy on DigitalOcean: Droplet + docker-compose + firewall (22, 80)
 
 ### Lower priority extras (if time permits)
 - [ ] Prometheus metrics: /metrics endpoint (prom-client)
