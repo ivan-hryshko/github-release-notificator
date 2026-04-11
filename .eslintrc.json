@@ -38,7 +38,8 @@
       "warn",
       { "argsIgnorePattern": "^_" }
     ],
-    "no-console": "warn"
+    "no-console": "warn",
+    "no-trailing-spaces": "error"
   },
   "ignorePatterns": ["dist/", "node_modules/", "*.test.ts"]
 }
