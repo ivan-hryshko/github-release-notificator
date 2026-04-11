@@ -59,7 +59,7 @@
 ### Priority extras (do first)
 - [x] Redis caching layer: GitHub API responses with configurable TTL (GITHUB_CACHE_TTL, default 600s)
 - [x] Redis: ETag/If-None-Match support for conditional requests (304 returns cached body)
-- [ ] API key authentication: X-API-Key header middleware on /api/*
+- [x] API key authentication: X-API-Key header on POST /subscribe and GET /subscriptions
 - [x] HTML subscription page: public/index.html served by Express
   - [ ] possibility unsubscribe from ui
   - [ ] possibility pass full github repo

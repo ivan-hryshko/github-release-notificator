@@ -21,6 +21,7 @@ export default defineConfig({
       SCAN_INTERVAL: '*/5 * * * *',
       NOTIFY_INTERVAL: '*/1 * * * *',
       NOTIFY_MAX_ATTEMPTS: '3',
+      API_KEY: 'test-integration-key',
     },
   },
 });
