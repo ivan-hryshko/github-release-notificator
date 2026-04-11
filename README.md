@@ -76,7 +76,7 @@ src/
   - add git basic ci - it helps as at development
 4. Add Scaner and Notifier logic
   - it more complex logic so i alos added integration tests
-  - switch Mailtrap to Mailhog that Claude also can locally check emails
+  - [ADR-001: Switch to MailHog for local dev](docs/adr/ADR-001-mailhog-for-local-development.md) — Claude couldn't verify emails via Mailtrap's web UI, so switched to MailHog with REST API access
 5. Refined email UI for better user experience
 6. Implemented a basic UI for API integration. Acknowledging the time constraints for a polished UX, I’ve decided to prioritize deployment first
   - Done is better than perfect: a deployed site beats an undeployed ideal
