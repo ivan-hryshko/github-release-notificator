@@ -94,6 +94,10 @@ API contract is defined in `docs/api.yaml` — **do not modify**. All endpoints 
 - `docker-compose.dev.yml` — dev: postgres (5432) + redis (6379) with exposed ports
 - App runs on port 3000 internally, mapped to 80 in production.
 
+## Design Documents
+
+- `docs/sdd.md` — System Design Document. When making changes to architecture, data flows, DB schema, infrastructure, or error handling, update the SDD to reflect the current state.
+
 ## Important Constraints
 
 - Monolith only — no microservices.

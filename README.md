@@ -66,9 +66,15 @@ src/
 └── public/          # Static HTML subscription page
 ```
 
+## Design Documents
+
+- [RFC-001: Requirements Analysis & Technology Choices](docs/rfc/RFC-001-requirements-and-stack.md)
+- [SDD: System Design Document](docs/sdd.md)
+- [ADR-001: Switch to MailHog for local dev](docs/adr/ADR-001-mailhog-for-local-development.md)
+
 ## Develop logic steps
 1. Requirment analysis
-- [RFC-001: Requirements Analysis & Technology Choices](docs/rfc/RFC-001-requirements-and-stack.md)
+- [RFC-001](docs/rfc/RFC-001-requirements-and-stack.md)
 2. Start build basic setup
   - test it and with Claude
 3. Add basic endpoints
@@ -76,7 +82,7 @@ src/
   - add git basic ci - it helps as at development
 4. Add Scaner and Notifier logic
   - it more complex logic so i alos added integration tests
-  - [ADR-001: Switch to MailHog for local dev](docs/adr/ADR-001-mailhog-for-local-development.md) — Claude couldn't verify emails via Mailtrap's web UI, so switched to MailHog with REST API access
+  - Switch Mailtrap to MailHog for local dev — see [ADR-001](docs/adr/ADR-001-mailhog-for-local-development.md)
 5. Refined email UI for better user experience
 6. Implemented a basic UI for API integration. Acknowledging the time constraints for a polished UX, I’ve decided to prioritize deployment first
   - Done is better than perfect: a deployed site beats an undeployed ideal
