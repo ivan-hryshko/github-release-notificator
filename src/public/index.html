@@ -232,7 +232,7 @@
       const data = await res.json();
 
       if (res.ok) {
-        showToast('subscribe-toast', data.message || 'Subscription successful! Check your email to confirm.', 'success');
+        showToast('subscribe-toast', data.message || 'Subscription successful. Please check your email (including spam folder) to confirm.', 'success');
         document.getElementById('sub-repo').value = '';
       } else if (res.status === 401) {
         showToast('subscribe-toast', 'Invalid API key. Check your API key above.', 'error');
