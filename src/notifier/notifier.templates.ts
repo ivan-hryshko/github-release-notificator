@@ -1,4 +1,5 @@
 import { env } from '../config/env.js';
+import { escapeHtml } from '../common/html.js';
 
 const BRAND_COLOR = '#6366f1';
 const BRAND_NAME = 'Release Notifier';
@@ -75,20 +76,25 @@ export function releaseNotificationEmail(
   const unsubscribeUrl = `${env.BASE_URL}/api/unsubscribe/${unsubscribeToken}`;
   const displayName = releaseName || tagName;
 
+  const safeRepo = escapeHtml(repo);
+  const safeTag = escapeHtml(tagName);
+  const safeDisplayName = escapeHtml(displayName);
+  const safeReleaseUrl = escapeHtml(releaseUrl);
+
   const content = `
     <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:${BRAND_COLOR};text-transform:uppercase;letter-spacing:0.5px">New Release</p>
-    <h2 style="margin:0 0 6px;font-size:22px;font-weight:700;color:#18181b">${repo}</h2>
+    <h2 style="margin:0 0 6px;font-size:22px;font-weight:700;color:#18181b">${safeRepo}</h2>
     <p style="margin:0 0 20px;font-size:17px;color:#3f3f46">
-      <span style="display:inline-block;padding:4px 10px;background:#f0fdf4;color:#166534;border-radius:6px;font-weight:600;font-size:14px">${tagName}</span>
-      <span style="margin-left:8px;color:#52525b">${displayName}</span>
+      <span style="display:inline-block;padding:4px 10px;background:#f0fdf4;color:#166534;border-radius:6px;font-weight:600;font-size:14px">${safeTag}</span>
+      <span style="margin-left:8px;color:#52525b">${safeDisplayName}</span>
     </p>
-    ${button(releaseUrl, 'View on GitHub')}
+    ${button(safeReleaseUrl, 'View on GitHub')}
     <p style="margin:16px 0 0;font-size:12px;color:#a1a1aa">
-      <a href="${unsubscribeUrl}" style="color:#a1a1aa;text-decoration:underline">Unsubscribe</a> from ${repo} notifications.
+      <a href="${unsubscribeUrl}" style="color:#a1a1aa;text-decoration:underline">Unsubscribe</a> from ${safeRepo} notifications.
     </p>`;
 
   return {
-    subject: `New release: ${repo} ${tagName}`,
+    subject: `New release: ${repo} ${tagName}`,  // subject is plain text, no escaping needed
     html: layout(content),
   };
 }

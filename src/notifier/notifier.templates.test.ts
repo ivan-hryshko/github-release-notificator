@@ -5,6 +5,7 @@ vi.mock('../config/env.js', () => ({
 }));
 
 import { confirmationEmail, releaseNotificationEmail } from './notifier.templates.js';
+import { escapeHtml } from '../common/html.js';
 
 describe('confirmationEmail', () => {
   it('returns correct subject', () => {
@@ -73,5 +74,37 @@ describe('releaseNotificationEmail', () => {
     // tagName appears both in the badge and as the display name fallback
     const matches = result.html.match(/v1\.2\.0/g);
     expect(matches?.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('escapes HTML in repo, tagName, and releaseName', () => {
+    const result = releaseNotificationEmail(
+      '<script>alert("xss")</script>',
+      '<img onerror=alert(1)>',
+      'Release "evil" & <b>bold</b>',
+      'https://example.com/release?a=1&b=2',
+      'unsub-token',
+    );
+    expect(result.html).not.toContain('<script>');
+    expect(result.html).not.toContain('<img onerror');
+    expect(result.html).not.toContain('<b>bold</b>');
+    expect(result.html).toContain('&lt;script&gt;');
+    expect(result.html).toContain('&lt;img onerror=alert(1)&gt;');
+    expect(result.html).toContain('Release &quot;evil&quot; &amp; &lt;b&gt;bold&lt;/b&gt;');
+  });
+});
+
+// ─── escapeHtml ─────────────────────────────────────────
+
+describe('escapeHtml', () => {
+  it('escapes all dangerous characters', () => {
+    expect(escapeHtml('&<>"\'')).toBe('&amp;&lt;&gt;&quot;&#39;');
+  });
+
+  it('returns safe strings unchanged', () => {
+    expect(escapeHtml('hello world')).toBe('hello world');
+  });
+
+  it('handles empty string', () => {
+    expect(escapeHtml('')).toBe('');
   });
 });
