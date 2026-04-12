@@ -202,5 +202,33 @@ describe('github.client', () => {
       expect(fetchMock).toHaveBeenCalledTimes(2);
       vi.useRealTimers();
     });
+
+    it('stops retrying after 3 consecutive 429 responses', async () => {
+      vi.useFakeTimers();
+      const mock429 = () => mockResponse(429, null, { 'retry-after': '1' });
+      fetchMock
+        .mockResolvedValueOnce(mock429())
+        .mockResolvedValueOnce(mock429())
+        .mockResolvedValueOnce(mock429())
+        .mockResolvedValueOnce(mock429());
+
+      const { checkRepoExists } = await loadClient();
+      const promise = checkRepoExists('o', 'r');
+
+      // Advance through 3 retries (initial + 3 retries = 4 calls)
+      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(1000);
+
+      // Should return false (429 response, not ok)
+      expect(await promise).toBe(false);
+      // 1 initial + 3 retries = 4 total fetch calls
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ retryCount: 3 }),
+        'GitHub 429 max retries exceeded',
+      );
+      vi.useRealTimers();
+    });
   });
 });
