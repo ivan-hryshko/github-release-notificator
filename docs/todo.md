@@ -80,7 +80,7 @@
 
 ### Minor
 - [x] #8 Add retry limit to 429 recursion in GitHub client — no max retries, persistent 429s cause infinite recursion. Add counter with max 3.
-- [ ] #9 Handle subscription creation race condition — concurrent requests for same email+repo hit unique constraint -> 500. Catch Postgres error `23505` and return 409.
+- [x] #9 Handle subscription creation race condition — concurrent requests for same email+repo hit unique constraint -> 500. Catch Postgres error `23505` and return 409.
 - [ ] #5 Document or fix scanner dropping >30 new releases — `findNewReleases` returns only newest when `lastSeenTag` not in list. Add pagination or document as known limitation.
 - [ ] #3 Move confirmation email to notification pipeline — currently sent inline in router with no retry. Route through pending -> cron -> send like release notifications.
 - [ ] #7 Improve Redis `getRedis()` connection failure handling — race condition if `connect()` rejects after returning instance. Add connection status check.

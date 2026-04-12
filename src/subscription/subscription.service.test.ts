@@ -143,6 +143,20 @@ describe('subscribe', () => {
     expect(repo.updateSubscription).not.toHaveBeenCalled();
   });
 
+  it('throws ConflictError on concurrent duplicate subscription (Postgres 23505)', async () => {
+    vi.mocked(repo.createSubscription).mockRejectedValue(
+      Object.assign(new Error('unique_violation'), { code: '23505' }),
+    );
+    await expect(subscribe('a@b.com', 'owner/myrepo'))
+      .rejects.toThrow(ConflictError);
+  });
+
+  it('re-throws non-unique-violation errors from createSubscription', async () => {
+    vi.mocked(repo.createSubscription).mockRejectedValue(new Error('DB connection lost'));
+    await expect(subscribe('a@b.com', 'owner/myrepo'))
+      .rejects.toThrow('DB connection lost');
+  });
+
   it('re-subscribes with new tokens when unsubscribed', async () => {
     vi.mocked(repo.findSubscription).mockResolvedValue({
       ...defaultSub,
