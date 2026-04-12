@@ -48,7 +48,7 @@ jobs:
       - run: npm run test:integration
         env:
           API_KEY: test-integration-key
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_PAT }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT_TOKEN }}
 
   deploy:
     runs-on: ubuntu-latest
