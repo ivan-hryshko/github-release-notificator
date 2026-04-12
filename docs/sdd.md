@@ -16,24 +16,111 @@ GitHub Release Notificator is a monolithic Node.js service. One process handles 
 | **Scanner** | Cron (every 5 min) | Check GitHub for new releases, create notification records |
 | **Notifier** | Cron (every 1 min) | Send pending emails, retry failures (max 3 attempts) |
 
+### C4 Level 1: System Context
+
+Who uses the system and what external services it depends on.
+
+```mermaid
+C4Context
+    title System Context — GitHub Release Notificator
+
+    Person(user, "User", "Subscribes to GitHub repos and receives email notifications about new releases")
+
+    System(app, "GitHub Release Notificator", "Monolithic Node.js service: manages subscriptions, scans for new releases, sends email notifications")
+
+    System_Ext(github, "GitHub API", "Source of repository metadata and release data")
+    System_Ext(smtp, "SMTP Server (Mailtrap)", "Delivers confirmation and release notification emails")
+    System_Ext(email, "Email Client", "Where the user reads emails and clicks confirm/unsubscribe links")
+
+    Rel(user, app, "POST /subscribe, GET /subscriptions", "HTTPS")
+    Rel(app, github, "Checks repos, fetches releases", "HTTPS REST API")
+    Rel(app, smtp, "Sends emails", "SMTP")
+    Rel(smtp, email, "Delivers emails")
+    Rel(email, app, "GET /confirm/:token, GET /unsubscribe/:token", "HTTPS")
 ```
-  Browser / curl
-       │
-       ▼
- ┌───────────┐      ┌──────────┐
- │  Express   │─────▶│ Postgres │
- │  (API)     │      └──────────┘
- └───────────┘            ▲
-       │                  │
- ┌───────────┐      ┌─────┴────┐      ┌───────┐
- │  Scanner   │─────▶│ GitHub   │◀────▶│ Redis │
- │  (cron)    │      │ API      │      │ cache │
- └───────────┘      └──────────┘      └───────┘
-       │
- ┌───────────┐      ┌──────────┐
- │  Notifier  │─────▶│  SMTP    │
- │  (cron)    │      │(Mailtrap)│
- └───────────┘      └──────────┘
+
+### C4 Level 2: Containers
+
+Internal building blocks of the system — one Node.js process with three modules, backed by PostgreSQL and Redis.
+
+```mermaid
+C4Container
+    title Container Diagram — GitHub Release Notificator
+
+    Person(user, "User")
+
+    System_Boundary(sys, "GitHub Release Notificator") {
+        Container(api, "Express API", "Node.js, Express", "Handles HTTP requests: subscribe, confirm, unsubscribe, list subscriptions")
+        Container(scanner, "Scanner", "node-cron", "Checks GitHub for new releases every 5 min, creates notification records")
+        Container(notifier, "Notifier", "node-cron", "Sends pending emails every 1 min, retries failures up to 3 times")
+        ContainerDb(postgres, "PostgreSQL", "PostgreSQL 16", "Stores users, repositories, subscriptions, notifications, scan_jobs")
+        ContainerDb(redis, "Redis", "Redis 7", "Caches GitHub API responses with ETag support, TTL=600s")
+    }
+
+    System_Ext(github, "GitHub API")
+    System_Ext(smtp, "SMTP Server")
+
+    Rel(user, api, "HTTP requests", "HTTPS")
+    Rel(api, postgres, "Read/write subscriptions, users, repos")
+    Rel(scanner, postgres, "Read repos, write notifications")
+    Rel(scanner, github, "Fetch releases", "HTTPS")
+    Rel(scanner, redis, "Cache GitHub responses")
+    Rel(notifier, postgres, "Read pending notifications, update status")
+    Rel(notifier, smtp, "Send emails", "SMTP")
+    Rel(api, github, "Check repo exists", "HTTPS")
+    Rel(api, redis, "Cache repo existence")
+```
+
+### C4 Level 3: Components
+
+Internal components within the Node.js process — feature-based architecture with router → service → repository layers.
+
+```mermaid
+C4Component
+    title Component Diagram — Node.js Application
+
+    Container_Boundary(app, "Node.js Process") {
+        Component(authMw, "Auth Middleware", "Express middleware", "Validates X-API-Key header using timing-safe comparison")
+        Component(errorMw, "Error Handler", "Express middleware", "Catches AppError subclasses, returns structured JSON responses")
+
+        Component(subRouter, "Subscription Router", "Express Router", "Routes: POST /subscribe, GET /confirm, GET /unsubscribe, GET /subscriptions")
+        Component(subService, "Subscription Service", "TypeScript", "Business logic: subscribe flow, confirm, unsubscribe, list")
+        Component(subRepo, "Subscription Repository", "Drizzle ORM", "DB queries for users, subscriptions, repositories")
+
+        Component(scanCron, "Scanner Cron", "node-cron", "Triggers every 5 min with isScanning mutex guard")
+        Component(scanService, "Scanner Service", "TypeScript", "Scans repos for new releases, creates notification records")
+        Component(scanRepo, "Scanner Repository", "Drizzle ORM", "DB queries for scan_jobs, repositories, notifications")
+
+        Component(notifyCron, "Notifier Cron", "node-cron", "Triggers every 1 min, processes up to 50 notifications per batch")
+        Component(notifyService, "Notifier Service", "TypeScript", "Renders email templates, sends via SMTP, tracks attempts")
+        Component(notifyRepo, "Notifier Repository", "Drizzle ORM", "DB queries for notifications with JOIN on subscriptions/users/repos")
+
+        Component(ghClient, "GitHub Client", "TypeScript", "Wraps GitHub API: rate limiting, ETag caching, 429 retry")
+    }
+
+    ContainerDb(postgres, "PostgreSQL")
+    ContainerDb(redis, "Redis")
+    System_Ext(github, "GitHub API")
+    System_Ext(smtp, "SMTP Server")
+
+    Rel(subRouter, authMw, "Protected routes")
+    Rel(subRouter, subService, "Delegates business logic")
+    Rel(subService, subRepo, "DB operations")
+    Rel(subService, ghClient, "Check repo exists, fetch latest release")
+    Rel(subRepo, postgres, "SQL queries")
+
+    Rel(scanCron, scanService, "Triggers scan")
+    Rel(scanService, scanRepo, "DB operations")
+    Rel(scanService, ghClient, "Fetch releases")
+    Rel(scanRepo, postgres, "SQL queries")
+
+    Rel(notifyCron, notifyService, "Triggers notification processing")
+    Rel(notifyService, notifyRepo, "DB operations")
+    Rel(notifyService, smtp, "Send emails")
+    Rel(notifyRepo, postgres, "SQL queries")
+
+    Rel(ghClient, redis, "Cache responses")
+    Rel(ghClient, github, "REST API calls")
 ```
 
 ## 2. Database Schema
