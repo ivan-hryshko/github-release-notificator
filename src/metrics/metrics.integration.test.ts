@@ -1,12 +1,20 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { app } from '../app.js';
-import { pool } from '../config/database.js';
-import { runMigrations } from '../db/migrate.js';
 import { register } from './metrics.js';
+import express from 'express';
+import { metricsMiddleware } from './metrics.middleware.js';
+import { metricsRouter } from './metrics.router.js';
 import type { Server } from 'node:http';
 
 const PORT = 4001;
 let server: Server;
+
+function buildTestApp() {
+  const testApp = express();
+  testApp.use(metricsMiddleware);
+  testApp.get('/health', (_req, res) => res.json({ status: 'ok' }));
+  testApp.use(metricsRouter);
+  return testApp;
+}
 
 async function authedRequest(path: string) {
   return fetch(`http://localhost:${PORT}${path}`, {
@@ -15,15 +23,13 @@ async function authedRequest(path: string) {
 }
 
 describe('GET /metrics', () => {
-  beforeAll(async () => {
+  beforeAll(() => {
     register.resetMetrics();
-    await runMigrations();
-    server = app.listen(PORT);
+    server = buildTestApp().listen(PORT);
   });
 
-  afterAll(async () => {
+  afterAll(() => {
     server.close();
-    await pool.end();
   });
 
   it('returns 401 without API key', async () => {
