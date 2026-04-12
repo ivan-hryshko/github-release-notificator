@@ -6,6 +6,7 @@ import pinoHttpModule from 'pino-http';
 const pinoHttp = pinoHttpModule.default ?? pinoHttpModule;
 import { logger } from './common/logger.js';
 import { errorHandler } from './common/error-handler.js';
+import { env } from './config/env.js';
 import { subscriptionRouter } from './subscription/subscription.router.js';
 import { metricsMiddleware } from './metrics/metrics.middleware.js';
 import { metricsRouter } from './metrics/metrics.router.js';
@@ -32,9 +33,14 @@ app.get('/health', (_req, res) => {
 // API routes
 app.use('/api', subscriptionRouter);
 
-// Swagger UI — override host to point to this server
+// Swagger UI — override host/schemes at runtime (contract YAML stays untouched)
 const swaggerDoc = YAML.load(path.join(__dirname, 'swagger', 'api.yaml'));
-swaggerDoc.host = `localhost:${process.env.PORT || 3000}`;
+swaggerDoc.host = `localhost:${env.PORT}`;
+swaggerDoc.schemes = ['http'];
+swaggerDoc.securityDefinitions = {
+  ApiKeyAuth: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
+};
+swaggerDoc.security = [{ ApiKeyAuth: [] }];
 app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDoc));
 
 // Metrics endpoint

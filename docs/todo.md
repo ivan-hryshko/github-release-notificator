@@ -87,15 +87,15 @@
 
 ### Nit
 - [x] #12 Implement Prometheus `/metrics` — prom-client used in src/metrics/ with custom metrics, auth, and integration tests.
-- [ ] #13 Use validated `env.PORT` in Swagger host override — `src/app.ts` reads `process.env.PORT` directly, bypassing Zod.
+- [x] #13 Use validated `env.PORT` in Swagger host override — now uses `env.PORT` from Zod config.
 - [ ] #11 Check `sendEmail` return value for confirmation email — user gets 200 "check your email" even if send failed.
 - [ ] #10 Fix SQL interpolation in integration test helper — `getToken()` interpolates column name directly into SQL string.
 
 ## Final
 
 - [x] README.md: architecture description, design decisions, setup instructions
-- [ ] Final review: check all Swagger contract compliance
-  - [ ] Fix pass API key
+- [x] Final review: check all Swagger contract compliance
+  - [x] Fix pass API key — added runtime securityDefinitions + Authorize button in Swagger UI
 - [x] Final deploy + production testing
 - [x] E2E test with test-repository (ivan-hryshko/release-testing)
 - [x] reviwer should possible up docker compsoe locally
