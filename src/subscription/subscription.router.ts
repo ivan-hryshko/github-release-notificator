@@ -4,8 +4,7 @@ import { apiKeyAuth } from '../common/auth.middleware.js';
 import { ValidationError } from '../common/errors.js';
 import { subscribeSchema, emailQuerySchema, tokenParamSchema } from './subscription.validator.js';
 import * as service from './subscription.service.js';
-import { sendEmail } from '../notifier/notifier.service.js';
-import { confirmationEmail } from '../notifier/notifier.templates.js';
+import { createConfirmationNotification } from '../notifier/notifier.repository.js';
 
 const router = Router();
 
@@ -21,8 +20,9 @@ router.post(
     const { email, repo } = parsed.data;
     const result = await service.subscribe(email, repo);
 
-    const template = confirmationEmail(result.subscription.confirmToken);
-    await sendEmail(email, template.subject, template.html);
+    if (result.isNew) {
+      await createConfirmationNotification(result.subscription.id);
+    }
 
     res.status(200).json({ message: 'Subscription successful. Please check your email (including spam folder) to confirm.' });
   }),

@@ -61,15 +61,35 @@
 - [x] Redis: ETag/If-None-Match support for conditional requests (304 returns cached body)
 - [x] API key authentication: X-API-Key header on POST /subscribe and GET /subscriptions
 - [x] HTML subscription page: public/index.html served by Express
-  - [ ] possibility unsubscribe from ui
   - [ ] possibility pass full github repo
 - [x] Deploy on DigitalOcean: Droplet + docker-compose + firewall (22, 80)
 
 ### Lower priority extras (if time permits)
 - [ ] Prometheus metrics: /metrics endpoint (prom-client)
-- [ ] Integration tests (testcontainers: Postgres + Redis, full flow)
-- [ ] GitHub Actions CI: add integration tests
+- [x] Integration tests (testcontainers: Postgres + Redis, full flow)
+- [x] GitHub Actions CI: add integration tests
 - [ ] gRPC interface as alternative/addition to REST API
+
+## AI Review #001 — Issues (prioritized)
+
+### Critical / Major
+- [x] #6 Fix scanner cron crash when DB is down — `updateScanJob(job.id)` throws TypeError if `createScanJob()` fails (`job` is undefined). Guard catch block with `if (job)`.
+- [x] #2 Add HTML escaping to email templates — `releaseName`, `releaseUrl` etc. interpolated raw into HTML. Add `escapeHtml()` utility.
+- [x] #4 Fix `fetchLatestRelease` filtering bug — `per_page=1` + draft/prerelease filter can return empty, causing false "new release" notifications. Use `/releases/latest` endpoint or higher `perPage`.
+- [x] #1 Use constant-time comparison for API key — `provided !== env.API_KEY` vulnerable to timing attacks. Use `crypto.timingSafeEqual`.
+
+### Minor
+- [x] #8 Add retry limit to 429 recursion in GitHub client — no max retries, persistent 429s cause infinite recursion. Add counter with max 3.
+- [x] #9 Handle subscription creation race condition — concurrent requests for same email+repo hit unique constraint -> 500. Catch Postgres error `23505` and return 409.
+- [ ] #5 Document or fix scanner dropping >30 new releases — `findNewReleases` returns only newest when `lastSeenTag` not in list. Add pagination or document as known limitation.
+- [x] #3 Move confirmation email to notification pipeline — currently sent inline in router with no retry. Route through pending -> cron -> send like release notifications.
+- [x] #7 Improve Redis `getRedis()` connection failure handling — race condition if `connect()` rejects after returning instance. Add connection status check.
+
+### Nit
+- [ ] #12 Implement Prometheus `/metrics` or remove `prom-client` — dependency in package.json but never imported.
+- [ ] #13 Use validated `env.PORT` in Swagger host override — `src/app.ts` reads `process.env.PORT` directly, bypassing Zod.
+- [ ] #11 Check `sendEmail` return value for confirmation email — user gets 200 "check your email" even if send failed.
+- [ ] #10 Fix SQL interpolation in integration test helper — `getToken()` interpolates column name directly into SQL string.
 
 ## Final
 
@@ -77,3 +97,4 @@
 - [ ] Final review: check all Swagger contract compliance
   - [ ] Fix pass API key
 - [ ] Final deploy + production testing
+- [ ] E2E test with test-repository

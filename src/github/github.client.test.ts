@@ -124,18 +124,29 @@ describe('github.client', () => {
   });
 
   describe('fetchLatestRelease', () => {
-    it('returns first release', async () => {
+    it('returns the latest release from /releases/latest', async () => {
       const release = { tag_name: 'v1.0', draft: false, prerelease: false };
-      fetchMock.mockResolvedValueOnce(mockResponse(200, [release]));
+      fetchMock.mockResolvedValueOnce(mockResponse(200, release));
       const { fetchLatestRelease } = await loadClient();
       const result = await fetchLatestRelease('o', 'r');
       expect(result).toMatchObject({ tag_name: 'v1.0' });
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.github.com/repos/o/r/releases/latest',
+        expect.anything(),
+      );
     });
 
-    it('returns null when no releases', async () => {
-      fetchMock.mockResolvedValueOnce(mockResponse(200, []));
+    it('returns null when no releases (404)', async () => {
+      fetchMock.mockResolvedValueOnce(mockResponse(404));
       const { fetchLatestRelease } = await loadClient();
       expect(await fetchLatestRelease('o', 'r')).toBeNull();
+    });
+
+    it('returns null and logs error on server error', async () => {
+      fetchMock.mockResolvedValueOnce(mockResponse(500));
+      const { fetchLatestRelease } = await loadClient();
+      expect(await fetchLatestRelease('o', 'r')).toBeNull();
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 
@@ -189,6 +200,34 @@ describe('github.client', () => {
 
       expect(await promise).toBe(true);
       expect(fetchMock).toHaveBeenCalledTimes(2);
+      vi.useRealTimers();
+    });
+
+    it('stops retrying after 3 consecutive 429 responses', async () => {
+      vi.useFakeTimers();
+      const mock429 = () => mockResponse(429, null, { 'retry-after': '1' });
+      fetchMock
+        .mockResolvedValueOnce(mock429())
+        .mockResolvedValueOnce(mock429())
+        .mockResolvedValueOnce(mock429())
+        .mockResolvedValueOnce(mock429());
+
+      const { checkRepoExists } = await loadClient();
+      const promise = checkRepoExists('o', 'r');
+
+      // Advance through 3 retries (initial + 3 retries = 4 calls)
+      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(1000);
+      await vi.advanceTimersByTimeAsync(1000);
+
+      // Should return false (429 response, not ok)
+      expect(await promise).toBe(false);
+      // 1 initial + 3 retries = 4 total fetch calls
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ retryCount: 3 }),
+        'GitHub 429 max retries exceeded',
+      );
       vi.useRealTimers();
     });
   });

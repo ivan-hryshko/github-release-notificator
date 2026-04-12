@@ -2,12 +2,28 @@ import cron from 'node-cron';
 import { logger } from '../common/logger.js';
 import { env } from '../config/env.js';
 import { sendEmail } from './notifier.service.js';
-import { releaseNotificationEmail } from './notifier.templates.js';
+import { confirmationEmail, releaseNotificationEmail } from './notifier.templates.js';
 import {
   getPendingNotifications,
   markNotificationSent,
   markNotificationFailed,
 } from './notifier.repository.js';
+
+type PendingNotification = Awaited<ReturnType<typeof getPendingNotifications>>[number];
+
+function renderNotification(n: PendingNotification): { subject: string; html: string } {
+  if (n.type === 'confirmation') {
+    return confirmationEmail(n.confirmToken);
+  }
+
+  return releaseNotificationEmail(
+    `${n.owner}/${n.repo}`,
+    n.releaseTag ?? '',
+    n.releaseTag ?? '',
+    `https://github.com/${n.owner}/${n.repo}/releases/tag/${n.releaseTag}`,
+    n.unsubscribeToken,
+  );
+}
 
 export async function processNotifications(): Promise<{ sent: number; failed: number }> {
   const pending = await getPendingNotifications(50);
@@ -15,13 +31,7 @@ export async function processNotifications(): Promise<{ sent: number; failed: nu
   let failed = 0;
 
   for (const n of pending) {
-    const { subject, html } = releaseNotificationEmail(
-      `${n.owner}/${n.repo}`,
-      n.releaseTag ?? '',
-      n.releaseTag ?? '',
-      `https://github.com/${n.owner}/${n.repo}/releases/tag/${n.releaseTag}`,
-      n.unsubscribeToken,
-    );
+    const { subject, html } = renderNotification(n);
 
     const ok = await sendEmail(n.email, subject, html);
 

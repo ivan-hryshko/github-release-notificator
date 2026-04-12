@@ -4,6 +4,10 @@ import { checkRepoExists, fetchLatestRelease } from '../github/github.client.js'
 import { parseRepo } from './subscription.validator.js';
 import * as repo from './subscription.repository.js';
 
+function isUniqueViolation(err: unknown): boolean {
+  return typeof err === 'object' && err !== null && 'code' in err && (err as { code: string }).code === '23505';
+}
+
 export async function subscribe(email: string, repoFullName: string) {
   const { owner, repo: repoName } = parseRepo(repoFullName);
 
@@ -23,14 +27,21 @@ export async function subscribe(email: string, repoFullName: string) {
     return handleExistingSubscription(existing);
   }
 
-  const sub = await repo.createSubscription({
-    userId: user.id,
-    repositoryId: repository.id,
-    confirmToken: generateToken(),
-    unsubscribeToken: generateToken(),
-  });
+  try {
+    const sub = await repo.createSubscription({
+      userId: user.id,
+      repositoryId: repository.id,
+      confirmToken: generateToken(),
+      unsubscribeToken: generateToken(),
+    });
 
-  return { subscription: sub, isNew: true };
+    return { subscription: sub, isNew: true };
+  } catch (err: unknown) {
+    if (isUniqueViolation(err)) {
+      throw new ConflictError('Email already subscribed to this repository');
+    }
+    throw err;
+  }
 }
 
 async function seedLastSeenTag(

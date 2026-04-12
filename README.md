@@ -86,6 +86,7 @@ src/
 - [ADR-001: Switch to MailHog for local dev](docs/adr/ADR-001-mailhog-for-local-development.md)
 - [ADR-002: Single Admin API Key](docs/adr/ADR-002-api-key-auth.md)
 - [ADR-003: Manual CD Pipeline](docs/adr/ADR-003-cd-pipeline.md)
+- [AI Review #001: Full Codebase Review](docs/ai-review/ai-review-001.md)
 
 ## Develop logic steps
 1. Requirements analysis — [RFC-001](docs/rfc/RFC-001-requirements-and-stack.md)
@@ -102,4 +103,5 @@ src/
 7. Deploy to DigitalOcean — done is better than perfect
 8. Added API key authentication — [ADR-002](docs/adr/ADR-002-api-key-auth.md)
 9. Added manual CD pipeline for one-click deploys — [ADR-003](docs/adr/ADR-003-cd-pipeline.md)
+10. AI-assisted code review — identified 13 issues, prioritized fixes — [AI Review #001](docs/ai-review/ai-review-001.md)
 

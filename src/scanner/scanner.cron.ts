@@ -16,9 +16,10 @@ export function startScannerCron(): cron.ScheduledTask {
     }
 
     isScanning = true;
-    const job = await createScanJob();
+    let job: Awaited<ReturnType<typeof createScanJob>> | undefined;
 
     try {
+      job = await createScanJob();
       const stats = await scanRepositories();
 
       await updateScanJob(job.id, {
@@ -30,11 +31,13 @@ export function startScannerCron(): cron.ScheduledTask {
       logger.info(stats, 'Scan completed');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
-      await updateScanJob(job.id, {
-        status: 'failed',
-        errorMessage: message,
-        finishedAt: new Date(),
-      });
+      if (job) {
+        await updateScanJob(job.id, {
+          status: 'failed',
+          errorMessage: message,
+          finishedAt: new Date(),
+        });
+      }
       logger.error({ err }, 'Scan failed');
     } finally {
       isScanning = false;
