@@ -174,9 +174,11 @@ Multi-layer approach:
 | **Redis cache** | TTL configurable (default 600s) | Repeat requests skip API |
 | **ETag / If-None-Match** | Conditional requests | 304 responses don't count against limit |
 | **Header tracking** | Read `X-RateLimit-Remaining` | Pause when remaining < 10 |
-| **429 handling** | Read `Retry-After`, sleep, retry | Graceful recovery |
+| **429 handling** | Read `Retry-After`, sleep, retry (max 3) | Graceful recovery |
 
-Implementation in `src/github/github.client.ts` — `githubFetch()` wraps all requests with cache check → rate limit wait → conditional request → retry logic.
+Implementation in `src/github/github.client.ts` — `githubFetch()` wraps all requests with cache check → rate limit wait → conditional request → retry logic. The 429 retry loop is capped at 3 attempts to prevent infinite recursion under persistent rate limiting.
+
+`fetchLatestRelease()` uses the dedicated `/releases/latest` endpoint instead of `fetchReleases(perPage=1)`. This avoids a filtering bug where `per_page=1` could return a draft/prerelease, which after client-side filtering would produce an empty result and cause false "new release" notifications on the next scan.
 
 ## 5. Error Handling
 
@@ -191,11 +193,14 @@ Custom error classes in `src/common/errors.ts`:
 
 Global error handler catches all — known errors return structured JSON, unknown errors return 500 and log the stack trace.
 
-Scanner isolates errors per-repo: if one repo fails, others continue scanning.
+To ensure API idempotency and handle concurrent subscription attempts, the service catches PostgreSQL `23505` (unique_violation) errors during subscription creation. Instead of a generic 500, the API returns a structured 409 Conflict response. This handles the race condition where two concurrent requests for the same email+repo both pass the existence check but one fails on the unique constraint.
+
+Scanner isolates errors per-repo: if one repo fails, others continue scanning. The scanner cron guards against DB failures — if `createScanJob()` fails (e.g., DB is down), the catch block skips `updateScanJob()` and the `isScanning` mutex resets cleanly.
 
 ## 6. Security
 
-- **API key authentication** — `X-API-Key` header on `POST /subscribe` and `GET /subscriptions`. Single admin key from `API_KEY` env var. When not set, auth is disabled. Confirm/unsubscribe endpoints are unprotected (accessed via email links with UUID tokens). See [ADR-002](adr/ADR-002-api-key-auth.md).
+- **API key authentication** — `X-API-Key` header on `POST /subscribe` and `GET /subscriptions`. Single admin key from `API_KEY` env var. When not set, auth is disabled. Confirm/unsubscribe endpoints are unprotected (accessed via email links with UUID tokens). API key comparison uses `crypto.timingSafeEqual` to prevent timing attacks. See [ADR-002](adr/ADR-002-api-key-auth.md).
+- **HTML escaping** — All user-controlled and GitHub-sourced data (`repo`, `tagName`, `releaseName`, `releaseUrl`) is escaped via `escapeHtml()` before interpolation into email HTML templates, preventing XSS in email clients.
 - **Double opt-in** — subscription activates only after clicking UUID confirmation link
 - **Stateless unsubscribe** — each subscription has a unique `unsubscribe_token` in every email
 - **Token entropy** — `crypto.randomUUID()` = 122 bits, brute force not feasible
