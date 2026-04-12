@@ -3,6 +3,7 @@ import { logger } from '../common/logger.js';
 import { env } from '../config/env.js';
 import { scanRepositories } from './scanner.service.js';
 import { createScanJob, updateScanJob } from './scanner.repository.js';
+import { scanRunsTotal } from '../metrics/metrics.js';
 
 let isScanning = false;
 
@@ -28,6 +29,7 @@ export function startScannerCron(): cron.ScheduledTask {
         finishedAt: new Date(),
       });
 
+      scanRunsTotal.inc({ status: 'completed' });
       logger.info(stats, 'Scan completed');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
@@ -38,6 +40,7 @@ export function startScannerCron(): cron.ScheduledTask {
           finishedAt: new Date(),
         });
       }
+      scanRunsTotal.inc({ status: 'failed' });
       logger.error({ err }, 'Scan failed');
     } finally {
       isScanning = false;

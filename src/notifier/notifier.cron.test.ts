@@ -29,6 +29,10 @@ vi.mock('../common/logger.js', () => ({
   logger: { warn: vi.fn(), error: vi.fn(), info: vi.fn(), debug: vi.fn() },
 }));
 
+vi.mock('../metrics/metrics.js', () => ({
+  emailsSentTotal: { inc: vi.fn() },
+}));
+
 import { processNotifications } from './notifier.cron.js';
 import { sendEmail } from './notifier.service.js';
 import { confirmationEmail, releaseNotificationEmail } from './notifier.templates.js';
@@ -37,6 +41,7 @@ import {
   markNotificationSent,
   markNotificationFailed,
 } from './notifier.repository.js';
+import { emailsSentTotal } from '../metrics/metrics.js';
 
 const mockSendEmail = vi.mocked(sendEmail);
 const mockGetPending = vi.mocked(getPendingNotifications);
@@ -75,6 +80,7 @@ describe('processNotifications', () => {
     expect(result.sent).toBe(1);
     expect(result.failed).toBe(0);
     expect(markNotificationSent).toHaveBeenCalledWith(1);
+    expect(emailsSentTotal.inc).toHaveBeenCalledWith({ status: 'sent' }, 1);
     expect(sendEmail).toHaveBeenCalledWith(
       'user@test.com',
       'New release: org/lib v2',
@@ -91,6 +97,7 @@ describe('processNotifications', () => {
     expect(result.sent).toBe(0);
     expect(result.failed).toBe(1);
     expect(markNotificationFailed).toHaveBeenCalledWith(1, 'Email send failed');
+    expect(emailsSentTotal.inc).toHaveBeenCalledWith({ status: 'failed' }, 1);
   });
 
   it('handles mixed batch correctly', async () => {

@@ -10,6 +10,7 @@ API service that allows users to subscribe to email notifications about new rele
 - **Cache:** Redis (GitHub API responses, TTL 10 min)
 - **Email:** Nodemailer + Mailtrap
 - **Scanner:** node-cron (in-process scheduled jobs)
+- **Metrics:** prom-client (Prometheus)
 - **Testing:** Vitest
 - **CI/CD:** GitHub Actions (tests + manual deploy)
 - **Deploy:** DigitalOcean Droplet + Docker
@@ -61,6 +62,7 @@ docker-compose up --build
 | GET | /api/confirm/:token | - | Confirm email subscription |
 | GET | /api/unsubscribe/:token | - | Unsubscribe from notifications |
 | GET | /api/subscriptions?email= | API Key | List active subscriptions for email |
+| GET | /metrics | API Key | Prometheus metrics endpoint |
 
 **Authentication:** Protected endpoints require `X-API-Key` header. When `API_KEY` is not set in `.env`, auth is disabled. See [ADR-002](docs/adr/ADR-002-api-key-auth.md).
 
@@ -86,6 +88,7 @@ src/
 - [ADR-001: Switch to MailHog for local dev](docs/adr/ADR-001-mailhog-for-local-development.md)
 - [ADR-002: Single Admin API Key](docs/adr/ADR-002-api-key-auth.md)
 - [ADR-003: Manual CD Pipeline](docs/adr/ADR-003-cd-pipeline.md)
+- [ADR-006: Prometheus Metrics](docs/adr/ADR-006-prometheus-metrics.md)
 - [AI Review #001: Full Codebase Review](docs/ai-review/ai-review-001.md)
 
 ## Develop logic steps
@@ -105,3 +108,4 @@ src/
 9. Added manual CD pipeline for one-click deploys — [ADR-003](docs/adr/ADR-003-cd-pipeline.md)
 10. AI-assisted code review — identified 13 issues, prioritized fixes — [AI Review #001](docs/ai-review/ai-review-001.md)
 11. E2E manual test — full flow verified locally: subscribe → confirm → create GitHub release → scanner detects → notifier sends email (tested with [release-testing](https://github.com/ivan-hryshko/release-testing) repo + MailHog)
+12. Added Prometheus metrics (`/metrics` endpoint) — [ADR-006](docs/adr/ADR-006-prometheus-metrics.md)

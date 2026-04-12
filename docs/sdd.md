@@ -632,7 +632,40 @@ All config via environment variables, validated at startup with Zod (`src/config
 | `NOTIFY_MAX_ATTEMPTS` | 3 | Max email retry attempts |
 | `GITHUB_CACHE_TTL` | 600 | Redis cache TTL in seconds |
 
-## 9. Testing Strategy
+## 9. Observability & Monitoring
+
+The service exposes a `GET /metrics` endpoint for Prometheus scraping, protected by the same `X-API-KEY` authentication as admin endpoints.
+
+### Metrics
+
+| Metric | Type | Labels | Purpose |
+|--------|------|--------|---------|
+| `http_requests_total` | Counter | method, path, status | Traffic patterns, error rate detection |
+| `http_request_duration_seconds` | Histogram | method, path | Latency monitoring |
+| `github_rate_limit_remaining` | Gauge | — | Early warning before GitHub API exhaustion |
+| `emails_sent_total` | Counter | status | Email delivery health (sent vs failed) |
+| `scan_runs_total` | Counter | status | Background scan reliability |
+
+Default Node.js metrics (memory, CPU, event loop, GC) are also collected via `collectDefaultMetrics()`.
+
+### Design Principles
+
+- **In-memory collection**: All metrics live in process memory. The `/metrics` endpoint serializes current values — no database queries per scrape.
+- **Path normalization**: Dynamic UUID path segments are replaced with `:token` to prevent label cardinality explosion.
+- **Consistent auth**: Same API key mechanism as other protected endpoints, so Prometheus must send the `X-API-KEY` header.
+
+### Architecture
+
+```
+src/metrics/
+├── metrics.ts            # Registry + metric definitions
+├── metrics.middleware.ts  # HTTP request/duration tracking
+└── metrics.router.ts     # GET /metrics endpoint
+```
+
+Instrumentation points: scanner cron (scan_runs_total), notifier cron (emails_sent_total), GitHub client (github_rate_limit_remaining).
+
+## 10. Testing Strategy
 
 | Layer | Tool | What's tested |
 |-------|------|---------------|

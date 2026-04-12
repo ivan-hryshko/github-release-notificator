@@ -1,6 +1,7 @@
 import { logger } from '../common/logger.js';
 import { env } from '../config/env.js';
 import { getCached, setCache } from './github.cache.js';
+import { githubRateLimitRemaining } from '../metrics/metrics.js';
 
 const GITHUB_API_BASE = 'https://api.github.com';
 
@@ -37,7 +38,10 @@ function getHeaders(): Record<string, string> {
 function updateRateLimit(response: Response): void {
   const remaining = response.headers.get('x-ratelimit-remaining');
   const reset = response.headers.get('x-ratelimit-reset');
-  if (remaining) rateLimit.remaining = parseInt(remaining, 10);
+  if (remaining) {
+    rateLimit.remaining = parseInt(remaining, 10);
+    githubRateLimitRemaining.set(rateLimit.remaining);
+  }
   if (reset) rateLimit.resetAt = parseInt(reset, 10);
 }
 
