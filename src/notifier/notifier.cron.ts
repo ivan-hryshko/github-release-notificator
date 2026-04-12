@@ -8,6 +8,7 @@ import {
   markNotificationSent,
   markNotificationFailed,
 } from './notifier.repository.js';
+import { emailsSentTotal } from '../metrics/metrics.js';
 
 type PendingNotification = Awaited<ReturnType<typeof getPendingNotifications>>[number];
 
@@ -43,6 +44,9 @@ export async function processNotifications(): Promise<{ sent: number; failed: nu
       failed++;
     }
   }
+
+  if (sent) emailsSentTotal.inc({ status: 'sent' }, sent);
+  if (failed) emailsSentTotal.inc({ status: 'failed' }, failed);
 
   return { sent, failed };
 }

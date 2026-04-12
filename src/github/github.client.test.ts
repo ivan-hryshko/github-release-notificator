@@ -14,6 +14,9 @@ vi.mock('./github.cache.js', () => ({
   getCached: vi.fn().mockResolvedValue(null),
   setCache: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('../metrics/metrics.js', () => ({
+  githubRateLimitRemaining: { set: vi.fn() },
+}));
 
 import { logger } from '../common/logger.js';
 

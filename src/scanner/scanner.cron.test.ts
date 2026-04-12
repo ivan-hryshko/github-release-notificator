@@ -28,10 +28,15 @@ vi.mock('../config/env.js', () => ({
   env: { SCAN_INTERVAL: '*/5 * * * *' },
 }));
 
+vi.mock('../metrics/metrics.js', () => ({
+  scanRunsTotal: { inc: vi.fn() },
+}));
+
 import { startScannerCron } from './scanner.cron.js';
 import { scanRepositories } from './scanner.service.js';
 import { createScanJob, updateScanJob } from './scanner.repository.js';
 import { logger } from '../common/logger.js';
+import { scanRunsTotal } from '../metrics/metrics.js';
 
 const mockCreateScanJob = vi.mocked(createScanJob);
 const mockUpdateScanJob = vi.mocked(updateScanJob);
@@ -70,6 +75,7 @@ describe('startScannerCron', () => {
       finishedAt: expect.any(Date),
     });
     expect(logger.info).toHaveBeenCalledWith(stats, 'Scan completed');
+    expect(scanRunsTotal.inc).toHaveBeenCalledWith({ status: 'completed' });
   });
 
   it('updates scan job with failed status when scanRepositories throws', async () => {
@@ -86,6 +92,7 @@ describe('startScannerCron', () => {
       { err: expect.any(Error) },
       'Scan failed',
     );
+    expect(scanRunsTotal.inc).toHaveBeenCalledWith({ status: 'failed' });
   });
 
   it('does not call updateScanJob when createScanJob fails (DB down)', async () => {
