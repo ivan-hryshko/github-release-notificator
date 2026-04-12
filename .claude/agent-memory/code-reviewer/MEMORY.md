@@ -1,0 +1,1 @@
+- [Project Architecture](project_architecture.md) -- monolith Express+TS patterns, module structure, status values, missing extras (metrics, gRPC)
