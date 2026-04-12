@@ -35,8 +35,9 @@ app.use('/api', subscriptionRouter);
 
 // Swagger UI — override host/schemes at runtime (contract YAML stays untouched)
 const swaggerDoc = YAML.load(path.join(__dirname, 'swagger', 'api.yaml'));
-swaggerDoc.host = `localhost:${env.PORT}`;
-swaggerDoc.schemes = ['http'];
+const baseUrl = new URL(env.BASE_URL);
+swaggerDoc.host = baseUrl.host;
+swaggerDoc.schemes = [baseUrl.protocol.replace(':', '')];
 swaggerDoc.securityDefinitions = {
   ApiKeyAuth: { type: 'apiKey', in: 'header', name: 'X-API-Key' },
 };
