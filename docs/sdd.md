@@ -107,7 +107,9 @@ Why `status` instead of `confirmed: boolean` — three-state lifecycle can't be 
 
 ## 3. Data Flows
 
-### Subscribe Flow
+> **Diagram conventions:** solid arrows (`->>`) = requests, dashed arrows (`-->>`) = responses. `alt` = branching logic (if/else), `opt` = optional step, `loop` = iteration. See [Mermaid docs](https://mermaid.js.org/syntax/sequenceDiagram.html) for syntax reference.
+
+### 3.1 Subscribe Flow (POST /api/subscribe)
 
 ```
 POST /api/subscribe { email, repo: "owner/repo" }
@@ -127,7 +129,187 @@ POST /api/subscribe { email, repo: "owner/repo" }
 
 Confirmation emails are **not sent inline** — they go through the same notification pipeline as release emails. This ensures automatic retries and non-blocking API responses. See [ADR-004](adr/ADR-004-async-confirmation-emails.md).
 
-### Scanner Flow (every 5 min)
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant Auth as Auth Middleware
+    participant API as Express API
+    participant Redis
+    participant GH as GitHub API
+    participant DB as PostgreSQL
+
+    C->>Auth: POST /api/subscribe {email, repo}
+    alt API_KEY is set and key invalid/missing
+        Auth-->>C: 401 Invalid or missing API key
+    else API_KEY not set or key valid
+        Auth->>API: pass through
+    end
+
+    API->>API: Zod validate (email, repo format)
+    alt validation fails
+        API-->>C: 400 ValidationError
+    end
+
+    rect rgb(240, 248, 255)
+        Note over API, GH: GitHub Repo Check (with cache)
+        API->>Redis: getCached(/repos/owner/repo)
+        alt cache hit
+            Redis-->>API: cached response
+        else cache miss
+            API->>GH: GET /repos/{owner}/{repo}
+            GH-->>API: response
+            API->>Redis: setCache(path, body, etag)
+        end
+    end
+
+    alt repo not found (404)
+        API-->>C: 404 Repository not found
+    end
+
+    rect rgb(245, 245, 245)
+        Note over API, DB: Subscription Logic
+        API->>DB: findOrCreate user (by email)
+        API->>DB: findOrCreate repository (by owner/repo)
+
+        opt lastSeenTag is NULL (first time)
+            API->>GH: GET /repos/{owner}/{repo}/releases/latest
+            GH-->>API: latest release tag
+            API->>DB: updateRepository(lastSeenTag)
+        end
+
+        API->>DB: findSubscription(userId, repoId)
+        alt subscription exists, status = active
+            API-->>C: 409 Already subscribed
+        else subscription exists, status = pending
+            API-->>C: 200 Confirmation already sent (isNew=false)
+        else subscription exists, status = unsubscribed
+            API->>DB: updateSubscription(status=pending, new tokens)
+            API->>DB: createNotification(type=confirmation)
+            API-->>C: 200 Subscription re-activated
+        else subscription not found
+            API->>DB: createSubscription(status=pending)
+            alt unique_violation (23505) race condition
+                API-->>C: 409 Conflict
+            end
+            API->>DB: createNotification(type=confirmation)
+            API-->>C: 200 Subscription created (isNew=true)
+        end
+    end
+```
+
+### 3.2 Confirm Flow (GET /api/confirm/:token)
+
+```
+GET /api/confirm/:token
+  │
+  ├─ Zod validation (UUID format)
+  ├─ Find subscription by confirm_token
+  │    not found → 404
+  │    already active → 200 (no update)
+  │    pending → update status to active → 200
+  └─ Return 200
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as Express API
+    participant DB as PostgreSQL
+
+    C->>API: GET /api/confirm/:token
+    API->>API: Zod validate (UUID format)
+    alt invalid token format
+        API-->>C: 400 ValidationError
+    end
+
+    API->>DB: findSubscriptionByConfirmToken(token)
+    alt token not found
+        API-->>C: 404 Token not found
+    else status = active
+        API-->>C: 200 Already confirmed
+    else status = pending
+        API->>DB: updateSubscription(status=active)
+        API-->>C: 200 Subscription confirmed
+    end
+```
+
+### 3.3 Unsubscribe Flow (GET /api/unsubscribe/:token)
+
+```
+GET /api/unsubscribe/:token
+  │
+  ├─ Zod validation (UUID format)
+  ├─ Find subscription by unsubscribe_token
+  │    not found → 404
+  │    found → update status to unsubscribed → 200
+  └─ Return 200
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as Express API
+    participant DB as PostgreSQL
+
+    C->>API: GET /api/unsubscribe/:token
+    API->>API: Zod validate (UUID format)
+    alt invalid token format
+        API-->>C: 400 ValidationError
+    end
+
+    API->>DB: findSubscriptionByUnsubscribeToken(token)
+    alt token not found
+        API-->>C: 404 Token not found
+    else found
+        API->>DB: updateSubscription(status=unsubscribed)
+        API-->>C: 200 Unsubscribed
+    end
+```
+
+### 3.4 List Subscriptions (GET /api/subscriptions?email=)
+
+```
+GET /api/subscriptions?email=user@example.com
+  │
+  ├─ API key authentication (X-API-Key header)
+  ├─ Zod validation (email format)
+  ├─ Query active subscriptions with JOIN (users + subscriptions + repositories)
+  └─ Return 200 [{email, repo, confirmed, last_seen_tag}]
+```
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant Auth as Auth Middleware
+    participant API as Express API
+    participant DB as PostgreSQL
+
+    C->>Auth: GET /api/subscriptions?email=...
+    alt API_KEY is set and key invalid/missing
+        Auth-->>C: 401 Invalid or missing API key
+    else API_KEY not set or key valid
+        Auth->>API: pass through
+    end
+
+    API->>API: Zod validate (email format)
+    alt invalid email
+        API-->>C: 400 ValidationError
+    end
+
+    API->>DB: SELECT subscriptions JOIN users JOIN repositories WHERE email AND status=active
+    DB-->>API: rows
+    API-->>C: 200 [{email, repo, confirmed, last_seen_tag}]
+```
+
+### 3.5 Scanner Flow (every 5 min)
 
 ```
 cron trigger
@@ -150,7 +332,74 @@ cron trigger
 - `last_seen_tag` found at index N → `releases.slice(0, N)` (all newer ones)
 - `last_seen_tag` not in list → `[releases[0]]` (conservative: only latest)
 
-### Notifier Flow (every 1 min)
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Cron as Scanner Cron
+    participant S as Scanner Service
+    participant DB as PostgreSQL
+    participant Redis
+    participant GH as GitHub API
+
+    Cron->>Cron: check isScanning mutex
+    alt already scanning
+        Note over Cron: skip this run
+    end
+
+    Cron->>Cron: set isScanning = true
+    Cron->>DB: createScanJob(status=running)
+    alt DB error
+        Note over Cron: reset mutex, return (skip updateScanJob)
+    end
+
+    S->>DB: getRepositoriesWithActiveSubscriptions()
+    DB-->>S: repos[]
+
+    loop for each repo
+        rect rgb(240, 248, 255)
+            S->>Redis: getCached(releases path)
+            alt cache hit
+                Redis-->>S: cached releases
+            else cache miss
+                S->>GH: GET /repos/{owner}/{repo}/releases (ETag)
+                alt 429 rate limited
+                    Note over S, GH: wait Retry-After, retry (max 3)
+                end
+                GH-->>S: releases[]
+                S->>Redis: setCache(path, releases, etag)
+            end
+
+            S->>S: findNewReleases(releases, lastSeenTag)
+
+            opt newReleases.length > 0
+                S->>DB: getActiveSubscriptionsForRepo(repoId)
+                DB-->>S: subscribers[]
+                loop for each release × subscriber
+                    S->>DB: notificationExists(subId, tag)?
+                    alt not exists (dedup OK)
+                        S->>DB: createNotification(type=release, status=pending)
+                    end
+                end
+                S->>DB: updateRepository(lastSeenTag, lastCheckedAt)
+            end
+        end
+
+        alt error on this repo
+            Note over S: log error, increment errorCount, continue
+        end
+    end
+
+    alt scan completed successfully
+        Cron->>DB: updateScanJob(status=completed, stats)
+    else scan threw error
+        Cron->>DB: updateScanJob(status=failed, errorMessage)
+    end
+
+    Note over Cron: isScanning = false (finally)
+```
+
+### 3.6 Notifier Flow (every 1 min)
 
 ```
 cron trigger
@@ -167,6 +416,38 @@ cron trigger
 ```
 
 All outgoing emails (confirmations and release alerts) flow through this unified pipeline, ensuring retries and a complete audit trail.
+
+#### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant Cron as Notifier Cron
+    participant N as Notifier Service
+    participant DB as PostgreSQL
+    participant SMTP as SMTP Server
+
+    Cron->>DB: getPendingNotifications(limit=50)
+    Note over DB: WHERE status=pending OR (status=failed AND attempts < 3)
+    DB-->>Cron: notifications[]
+
+    loop for each notification
+        alt type = confirmation
+            N->>N: renderConfirmationEmail(confirmToken)
+        else type = release
+            N->>N: renderReleaseEmail(repo, tag, url, unsubscribeToken)
+        end
+
+        N->>SMTP: sendMail(to, subject, html)
+        alt send success
+            N->>DB: markNotificationSent(id, attempts + 1)
+        else send failure
+            N->>DB: markNotificationFailed(id, error, attempts + 1)
+            Note over DB: if attempts >= 3, won't be retried (filtered by WHERE)
+        end
+    end
+
+    Note over Cron: log summary {sent: N, failed: M}
+```
 
 ## 4. GitHub API Strategy
 
