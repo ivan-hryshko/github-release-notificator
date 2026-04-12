@@ -3,6 +3,14 @@ import { db } from '../config/database.js';
 import { notifications, subscriptions, users, repositories } from '../db/schema.js';
 import { env } from '../config/env.js';
 
+export async function createConfirmationNotification(subscriptionId: number) {
+  await db.insert(notifications).values({
+    subscriptionId,
+    type: 'confirmation',
+    status: 'pending',
+  });
+}
+
 export async function getPendingNotifications(limit: number) {
   return db
     .select({
@@ -15,6 +23,7 @@ export async function getPendingNotifications(limit: number) {
       owner: repositories.owner,
       repo: repositories.repo,
       unsubscribeToken: subscriptions.unsubscribeToken,
+      confirmToken: subscriptions.confirmToken,
     })
     .from(notifications)
     .innerJoin(subscriptions, eq(notifications.subscriptionId, subscriptions.id))

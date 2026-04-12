@@ -11,6 +11,10 @@ vi.mock('./notifier.service.js', () => ({
 }));
 
 vi.mock('./notifier.templates.js', () => ({
+  confirmationEmail: vi.fn(() => ({
+    subject: 'Confirm your subscription',
+    html: '<p>confirm</p>',
+  })),
   releaseNotificationEmail: vi.fn(() => ({
     subject: 'New release: org/lib v2',
     html: '<p>release</p>',
@@ -27,7 +31,7 @@ vi.mock('../common/logger.js', () => ({
 
 import { processNotifications } from './notifier.cron.js';
 import { sendEmail } from './notifier.service.js';
-import { releaseNotificationEmail } from './notifier.templates.js';
+import { confirmationEmail, releaseNotificationEmail } from './notifier.templates.js';
 import {
   getPendingNotifications,
   markNotificationSent,
@@ -47,6 +51,7 @@ const notification = {
   owner: 'org',
   repo: 'lib',
   unsubscribeToken: 'unsub-tok',
+  confirmToken: 'confirm-tok',
 };
 
 describe('processNotifications', () => {
@@ -105,7 +110,7 @@ describe('processNotifications', () => {
     expect(markNotificationFailed).toHaveBeenCalledWith(2, 'Email send failed');
   });
 
-  it('renders template with correct data', async () => {
+  it('renders release template with correct data', async () => {
     mockGetPending.mockResolvedValue([notification]);
     mockSendEmail.mockResolvedValue(true);
 
@@ -117,6 +122,28 @@ describe('processNotifications', () => {
       'v2.0.0',
       'https://github.com/org/lib/releases/tag/v2.0.0',
       'unsub-tok',
+    );
+  });
+
+  it('renders confirmation template for confirmation type', async () => {
+    const confirmNotification = {
+      ...notification,
+      id: 2,
+      type: 'confirmation',
+      releaseTag: null,
+    };
+    mockGetPending.mockResolvedValue([confirmNotification]);
+    mockSendEmail.mockResolvedValue(true);
+
+    const result = await processNotifications();
+
+    expect(result.sent).toBe(1);
+    expect(confirmationEmail).toHaveBeenCalledWith('confirm-tok');
+    expect(releaseNotificationEmail).not.toHaveBeenCalled();
+    expect(sendEmail).toHaveBeenCalledWith(
+      'user@test.com',
+      'Confirm your subscription',
+      '<p>confirm</p>',
     );
   });
 });

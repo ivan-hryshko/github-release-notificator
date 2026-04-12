@@ -121,9 +121,11 @@ POST /api/subscribe { email, repo: "owner/repo" }
   │    pending     → return 200 (resend confirmation)
   │    unsubscribed → reset to pending, new tokens
   │    not found   → create new subscription
-  ├─ Send confirmation email via SMTP
+  ├─ Create confirmation notification (type='confirmation', status='pending')
   └─ Return 200
 ```
+
+Confirmation emails are **not sent inline** — they go through the same notification pipeline as release emails. This ensures automatic retries and non-blocking API responses. See [ADR-004](adr/ADR-004-async-confirmation-emails.md).
 
 ### Scanner Flow (every 5 min)
 
@@ -155,12 +157,16 @@ cron trigger
   │
   ├─ SELECT 50 pending/failed notifications (attempts < 3)
   ├─ For each:
-  │    ├─ Render email template (HTML)
+  │    ├─ Dispatch by type:
+  │    │    confirmation → confirmationEmail(confirmToken)
+  │    │    release      → releaseNotificationEmail(repo, tag, ...)
   │    ├─ Send via Nodemailer
   │    ├─ Success → mark sent
   │    └─ Failure → mark failed, increment attempts
   └─ Log: sent N, failed M
 ```
+
+All outgoing emails (confirmations and release alerts) flow through this unified pipeline, ensuring retries and a complete audit trail.
 
 ## 4. GitHub API Strategy
 
