@@ -75,7 +75,7 @@
 ### Critical / Major
 - [x] #6 Fix scanner cron crash when DB is down — `updateScanJob(job.id)` throws TypeError if `createScanJob()` fails (`job` is undefined). Guard catch block with `if (job)`.
 - [ ] #2 Add HTML escaping to email templates — `releaseName`, `releaseUrl` etc. interpolated raw into HTML. Add `escapeHtml()` utility.
-- [ ] #4 Fix `fetchLatestRelease` filtering bug — `per_page=1` + draft/prerelease filter can return empty, causing false "new release" notifications. Use `/releases/latest` endpoint or higher `perPage`.
+- [x] #4 Fix `fetchLatestRelease` filtering bug — `per_page=1` + draft/prerelease filter can return empty, causing false "new release" notifications. Use `/releases/latest` endpoint or higher `perPage`.
 - [ ] #1 Use constant-time comparison for API key — `provided !== env.API_KEY` vulnerable to timing attacks. Use `crypto.timingSafeEqual`.
 
 ### Minor

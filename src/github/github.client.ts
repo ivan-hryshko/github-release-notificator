@@ -123,8 +123,15 @@ export async function fetchLatestRelease(
   owner: string,
   repo: string,
 ): Promise<GitHubRelease | null> {
-  const releases = await fetchReleases(owner, repo, 1);
-  return releases[0] ?? null;
+  const response = await githubFetch(`/repos/${owner}/${repo}/releases/latest`);
+
+  if (response.status === 404) return null;
+  if (!response.ok) {
+    logger.error({ status: response.status, owner, repo }, 'GitHub API error fetching latest release');
+    return null;
+  }
+
+  return (await response.json()) as GitHubRelease;
 }
 
 export function getRateLimitState(): RateLimitState {

@@ -124,18 +124,29 @@ describe('github.client', () => {
   });
 
   describe('fetchLatestRelease', () => {
-    it('returns first release', async () => {
+    it('returns the latest release from /releases/latest', async () => {
       const release = { tag_name: 'v1.0', draft: false, prerelease: false };
-      fetchMock.mockResolvedValueOnce(mockResponse(200, [release]));
+      fetchMock.mockResolvedValueOnce(mockResponse(200, release));
       const { fetchLatestRelease } = await loadClient();
       const result = await fetchLatestRelease('o', 'r');
       expect(result).toMatchObject({ tag_name: 'v1.0' });
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.github.com/repos/o/r/releases/latest',
+        expect.anything(),
+      );
     });
 
-    it('returns null when no releases', async () => {
-      fetchMock.mockResolvedValueOnce(mockResponse(200, []));
+    it('returns null when no releases (404)', async () => {
+      fetchMock.mockResolvedValueOnce(mockResponse(404));
       const { fetchLatestRelease } = await loadClient();
       expect(await fetchLatestRelease('o', 'r')).toBeNull();
+    });
+
+    it('returns null and logs error on server error', async () => {
+      fetchMock.mockResolvedValueOnce(mockResponse(500));
+      const { fetchLatestRelease } = await loadClient();
+      expect(await fetchLatestRelease('o', 'r')).toBeNull();
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 
