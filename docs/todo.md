@@ -42,7 +42,7 @@
 - [x] Notifier retry: re-attempt failed notifications (max 3 attempts)
 - [x] Email templates: release notification (with unsubscribe link) — done in Phase 2
 - [x] Notification deduplication: prevent duplicate notification for same subscription + release_tag
-- [ ] E2E manual test: subscribe → confirm → scan → notifications created → email sent
+- [x] E2E manual test: subscribe → confirm → scan → notifications created → email sent
 
 ## Phase 4: Testing + CI
 
@@ -97,4 +97,4 @@
 - [ ] Final review: check all Swagger contract compliance
   - [ ] Fix pass API key
 - [ ] Final deploy + production testing
-- [ ] E2E test with test-repository
+- [x] E2E test with test-repository (ivan-hryshko/release-testing)

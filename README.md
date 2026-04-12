@@ -104,4 +104,4 @@ src/
 8. Added API key authentication — [ADR-002](docs/adr/ADR-002-api-key-auth.md)
 9. Added manual CD pipeline for one-click deploys — [ADR-003](docs/adr/ADR-003-cd-pipeline.md)
 10. AI-assisted code review — identified 13 issues, prioritized fixes — [AI Review #001](docs/ai-review/ai-review-001.md)
-
+11. E2E manual test — full flow verified locally: subscribe → confirm → create GitHub release → scanner detects → notifier sends email (tested with [release-testing](https://github.com/ivan-hryshko/release-testing) repo + MailHog)
