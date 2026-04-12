@@ -83,7 +83,7 @@
 - [x] #9 Handle subscription creation race condition — concurrent requests for same email+repo hit unique constraint -> 500. Catch Postgres error `23505` and return 409.
 - [ ] #5 Document or fix scanner dropping >30 new releases — `findNewReleases` returns only newest when `lastSeenTag` not in list. Add pagination or document as known limitation.
 - [x] #3 Move confirmation email to notification pipeline — currently sent inline in router with no retry. Route through pending -> cron -> send like release notifications.
-- [ ] #7 Improve Redis `getRedis()` connection failure handling — race condition if `connect()` rejects after returning instance. Add connection status check.
+- [x] #7 Improve Redis `getRedis()` connection failure handling — race condition if `connect()` rejects after returning instance. Add connection status check.
 
 ### Nit
 - [ ] #12 Implement Prometheus `/metrics` or remove `prom-client` — dependency in package.json but never imported.
@@ -97,3 +97,4 @@
 - [ ] Final review: check all Swagger contract compliance
   - [ ] Fix pass API key
 - [ ] Final deploy + production testing
+- [ ] E2E test with test-repository

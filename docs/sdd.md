@@ -177,7 +177,7 @@ Multi-layer approach:
 | Layer | How | Effect |
 |-------|-----|--------|
 | **PAT token** | `GITHUB_TOKEN` env var | 60 → 5000 req/hr |
-| **Redis cache** | TTL configurable (default 600s) | Repeat requests skip API |
+| **Redis cache** | Promise-guarded async singleton (TTL configurable, default 600s) | Repeat requests skip API |
 | **ETag / If-None-Match** | Conditional requests | 304 responses don't count against limit |
 | **Header tracking** | Read `X-RateLimit-Remaining` | Pause when remaining < 10 |
 | **429 handling** | Read `Retry-After`, sleep, retry (max 3) | Graceful recovery |
@@ -210,6 +210,7 @@ Scanner isolates errors per-repo: if one repo fails, others continue scanning. T
 - **Double opt-in** — subscription activates only after clicking UUID confirmation link
 - **Stateless unsubscribe** — each subscription has a unique `unsubscribe_token` in every email
 - **Token entropy** — `crypto.randomUUID()` = 122 bits, brute force not feasible
+- **Redis connection safety** — `getRedis()` uses a Promise-guarded async singleton pattern to prevent race conditions during connection. No caller receives an instance until `connect()` resolves. See [ADR-005](adr/ADR-005-redis-singleton-initialization.md).
 - **Infrastructure** — Postgres and Redis ports not exposed outside Docker network
 - **Firewall** — only ports 22 (SSH) and 80 (HTTP) open on production server
 

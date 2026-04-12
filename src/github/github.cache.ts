@@ -10,7 +10,7 @@ interface CacheEntry {
 }
 
 export async function getCached(path: string): Promise<CacheEntry | null> {
-  const redis = getRedis();
+  const redis = await getRedis();
   if (!redis) return null;
 
   try {
@@ -27,7 +27,7 @@ export async function setCache(
   body: string,
   etag: string | null,
 ): Promise<void> {
-  const redis = getRedis();
+  const redis = await getRedis();
   if (!redis) return;
 
   try {
