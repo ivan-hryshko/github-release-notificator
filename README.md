@@ -30,28 +30,39 @@ Monolith with three modules in a single Node.js process:
 | Swagger UI | http://64.226.66.97/api/docs |
 | Health check | http://64.226.66.97/health |
 
-> **For reviewers (test task only):** API Key: `JgayfiJ4203M3vVytlvt0mQAkz313KCA`
+> **For reviewers (test task only):** API Key: `API_KEY=JgayfiJ4203M3vVytlvt0mQAkz313KCA`
 > This key is provided here solely for the test task evaluation. In a production system, API keys would be generated per-user and never committed to the repository.
 
 ## Quick Start
 
+### Run with Docker (recommended for reviewers)
+
 ```bash
-# 1. Clone and install
 git clone https://github.com/ivan-hryshko/github-release-notificator.git
 cd github-release-notificator
-npm install
+docker-compose -f docker-compose.dev.yml up --build
+```
 
-# 2. Start infrastructure (Postgres + Redis)
-docker-compose -f docker-compose.dev.yml up -d
+No `.env` file needed — all defaults are built into `docker-compose.dev.yml`.
 
-# 3. Copy env and fill in values
+| Service | URL |
+|---------|-----|
+| App | http://localhost:3000 |
+| Swagger UI | http://localhost:3000/api/docs |
+| MailHog (email viewer) | http://localhost:8025 |
+
+### Local Development (npm)
+
+```bash
+# 1. Start infrastructure only (Postgres + Redis + MailHog)
+docker-compose -f docker-compose.dev.yml up -d postgres redis mailhog
+
+# 2. Copy env template
 cp .env.example .env
 
-# 4. Run in development
+# 3. Install dependencies and run
+npm install
 npm run dev
-
-# 5. Or run everything in Docker
-docker-compose up --build
 ```
 
 ## API Endpoints

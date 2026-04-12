@@ -98,3 +98,4 @@
   - [ ] Fix pass API key
 - [ ] Final deploy + production testing
 - [x] E2E test with test-repository (ivan-hryshko/release-testing)
+- [x] reviwer should possible up docker compsoe locally

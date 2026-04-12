@@ -1,4 +1,30 @@
 services:
+  app:
+    container_name: grn-app-dev
+    build: .
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://app:secret@postgres:5432/releases
+      REDIS_URL: redis://redis:6379
+      SMTP_HOST: mailhog
+      SMTP_PORT: 1025
+      SMTP_USER: any
+      SMTP_PASS: any
+      EMAIL_FROM: noreply@releases-api.app
+      NODE_ENV: development
+      BASE_URL: http://localhost:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      mailhog:
+        condition: service_started
+
   postgres:
     container_name: grn-postgres-dev
     image: postgres:16-alpine
